@@ -4,7 +4,7 @@
   "description": "Gathers stats on interval for webrtc peer connection",
   "main": "src/StatsGatherer.js",
   "scripts": {
-    "compile": "node_modules/.bin/browserify src/StatsGatherer.js -o out/stats-gatherer.js -t [ babelify --presets [ es2015 ] ]",
+    "compile": "node_modules/.bin/browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ es2015 ] ]",
     "prepublish": "npm run compile",
     "test": "npm run compile && node_modules/.bin/semistandard && node_modules/.bin/mocha --compilers js:babel-core/register test/test.js"
   },
