@@ -341,6 +341,8 @@ var StatsGatherer = function (_EventEmitter) {
 
     _this.traceData = [];
 
+    _this.logger = opts.logger || console;
+
     _this.collectTraces();
     return _this;
   }
@@ -348,7 +350,11 @@ var StatsGatherer = function (_EventEmitter) {
   _createClass(StatsGatherer, [{
     key: '_gatherStats',
     value: function _gatherStats() {
-      return this.connection.pc.peerconnection.getStats(null);
+      try {
+        return this.connection.pc.peerconnection.getStats(null);
+      } catch (e) {
+        this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect connection.pc.peerconnection.getStats}', this.connection);
+      }
     }
   }, {
     key: '_createStatsReport',
@@ -365,7 +371,7 @@ var StatsGatherer = function (_EventEmitter) {
 
       Object.keys(results).forEach(function (key) {
         var report = results[key];
-        var now = report.timestamp;
+        var now = new Date(report.timestamp);
         var track = report.trackIdentifier || report.googTrackId || report.id;
         var kind = report.mediaType;
 
@@ -407,7 +413,7 @@ var StatsGatherer = function (_EventEmitter) {
 
         var bytes = report.bytesSent;
         var previousBytesSent = _this2.lastResult[report.id].bytesSent;
-        var deltaTime = now - _this2.lastResult[report.id].timestamp;
+        var deltaTime = now - new Date(_this2.lastResult[report.id].timestamp);
         var bitrate = Math.floor(8 * (bytes - previousBytesSent) / deltaTime);
 
         var lost = 0;

@@ -20,11 +20,17 @@ class StatsGatherer extends EventEmitter {
 
     this.traceData = [];
 
+    this.logger = opts.logger || console;
+
     this.collectTraces();
   }
 
   _gatherStats () {
-    return this.connection.pc.peerconnection.getStats(null);
+    try {
+      return this.connection.pc.peerconnection.getStats(null);
+    } catch (e) {
+      this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect connection.pc.peerconnection.getStats}', this.connection);
+    }
   }
 
   _createStatsReport (results, updateLastResult) {
@@ -38,12 +44,12 @@ class StatsGatherer extends EventEmitter {
 
     Object.keys(results).forEach((key) => {
       const report = results[key];
-      const now = report.timestamp;
+      const now = new Date(report.timestamp);
       const track = report.trackIdentifier || report.googTrackId || report.id;
       let kind = report.mediaType;
 
-      const local = (report.type === 'outboundrtp' && report.isRemote === false);
-      const activeSource = (report.type === 'ssrc' && report.bytesSent);
+      const local = report.type === 'outboundrtp' && report.isRemote === false;
+      const activeSource = report.type === 'ssrc' && report.bytesSent;
 
       if (!local && !activeSource) {
         return;
@@ -80,7 +86,7 @@ class StatsGatherer extends EventEmitter {
 
       const bytes = report.bytesSent;
       const previousBytesSent = this.lastResult[report.id].bytesSent;
-      const deltaTime = now - this.lastResult[report.id].timestamp;
+      const deltaTime = now - new Date(this.lastResult[report.id].timestamp);
       const bitrate = Math.floor(8 * (bytes - previousBytesSent) / deltaTime);
 
       let lost = 0;
