@@ -180,7 +180,7 @@ class StatsGatherer extends EventEmitter {
         this._haveConnectionMetrics = true;
         this._iceConnectionTime = window.performance.now() - this._iceStartTime;
 
-        this._gatherStats().then(function (reports) {
+        this._gatherStats().then((reports) => {
           const event = {
             name: 'connect',
             session: this.session,

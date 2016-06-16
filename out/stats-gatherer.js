@@ -519,14 +519,14 @@ var StatsGatherer = function (_EventEmitter) {
           _this5._gatherStats().then(function (reports) {
             var event = {
               name: 'connect',
-              session: this.session,
-              initiator: this.initiator,
-              conference: this.conference,
-              connectTime: this._iceConnectionTime,
-              hadLocalIPv6Candidate: this.connection.hadLocalIPv6Candidate,
-              hadRemoteIPv6Candidate: this.connection.hadRemoteIPv6Candidate,
-              hadLocalRelayCandidate: this.connection.hadLocalRelayCandidate,
-              hadRemoteRelayCandidate: this.connection.hadremoteRelayCandidate
+              session: _this5.session,
+              initiator: _this5.initiator,
+              conference: _this5.conference,
+              connectTime: _this5._iceConnectionTime,
+              hadLocalIPv6Candidate: _this5.connection.hadLocalIPv6Candidate,
+              hadRemoteIPv6Candidate: _this5.connection.hadRemoteIPv6Candidate,
+              hadLocalRelayCandidate: _this5.connection.hadLocalRelayCandidate,
+              hadRemoteRelayCandidate: _this5.connection.hadremoteRelayCandidate
             };
 
             var activeCandidatePair = null;
@@ -588,7 +588,7 @@ var StatsGatherer = function (_EventEmitter) {
               })();
             }
 
-            this.emit('stats', event);
+            _this5.emit('stats', event);
           });
         }
 
