@@ -366,7 +366,8 @@ var StatsGatherer = function (_EventEmitter) {
         session: this.session,
         initiator: this.initiator,
         conference: this.conference,
-        tracks: []
+        tracks: [],
+        remoteTracks: []
       };
 
       Object.keys(results).forEach(function (key) {
@@ -375,12 +376,12 @@ var StatsGatherer = function (_EventEmitter) {
         var track = report.trackIdentifier || report.googTrackId || report.id;
         var kind = report.mediaType;
 
-        var local = report.type === 'outboundrtp' && report.isRemote === false;
-        var activeSource = report.type === 'ssrc' && report.bytesSent;
+        var activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
 
-        if (!local && !activeSource) {
+        if (!activeSource) {
           return;
         }
+        var local = !!report.bytesSent;
 
         if (!_this2.lastResult || !_this2.lastResult[report.id] || _this2.lastResult[report.id].timestamp >= now) {
           return;
@@ -411,19 +412,40 @@ var StatsGatherer = function (_EventEmitter) {
           }
         }
 
-        var bytes = report.bytesSent;
-        var previousBytesSent = _this2.lastResult[report.id].bytesSent;
-        var deltaTime = now - new Date(_this2.lastResult[report.id].timestamp);
-        var bitrate = Math.floor(8 * (bytes - previousBytesSent) / deltaTime);
+        var bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
+        var lastResultReport = _this2.lastResult[report.id];
+        var previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
+        var deltaTime = now - new Date(lastResultReport.timestamp);
+        var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
 
         var lost = 0;
+        var total = 0;
         if (report.remoteId && results[report.remoteId]) {
           lost = results[report.remoteId].packetsLost;
-        } else if (report.packetsLost) {
-          lost = parseInt(report.packetsLost, 10);
+        } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
+          if (report.packetsLost) {
+            lost = parseInt(report.packetsLost, 10) || 0;
+          }
+          if (local && report.packetsSent) {
+            total = parseInt(report.packetsSent, 10) || 0;
+          }
+          if (!local && report.packetsReceived) {
+            total = parseInt(report.packetsReceived, 10) || 0;
+          }
+        }
+        var loss = 0;
+        if (total > 0) {
+          loss = Math.floor(lost / total * 100);
         }
 
-        event.tracks.push({ track: track, kind: kind, bitrate: bitrate, lost: lost, muted: muted });
+        // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
+        // and use only `loss` which is percentage loss
+        var trackInfo = { track: track, kind: kind, bitrate: bitrate, lost: lost, muted: muted, loss: loss };
+        if (local) {
+          event.tracks.push(trackInfo);
+        } else {
+          event.remoteTracks.push(trackInfo);
+        }
       });
 
       if (updateLastResult) {
