@@ -65,12 +65,21 @@ describe('StatsGatherer', function () {
 
       assert.equal(report2.tracks.length, 2);
 
-      const track = report2.tracks[0];
-      assert.ok(track.track);
-      assert.ok(track.bitrate);
-      assert.equal(track.kind, 'audio');
-      assert.equal(track.lost, 0);
-      assert.equal(track.muted, false);
+      const audioTrack = report2.tracks[0];
+      assert.ok(audioTrack.track);
+      assert.ok(audioTrack.bitrate);
+      assert.equal(audioTrack.kind, 'audio');
+      assert.equal(audioTrack.lost, 18);
+      assert.equal(audioTrack.loss, 0);
+      assert.equal(audioTrack.muted, false);
+
+      const videoTrack = report2.tracks[1];
+      assert.ok(videoTrack.track);
+      assert.ok(videoTrack.bitrate);
+      assert.equal(videoTrack.kind, 'video');
+      assert.equal(videoTrack.lost, 10000);
+      assert.equal(videoTrack.loss, 8);
+      assert.equal(videoTrack.muted, false);
     });
 
     it('should properly determine a track kind');

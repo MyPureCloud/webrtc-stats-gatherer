@@ -90,13 +90,25 @@ class StatsGatherer extends EventEmitter {
       const bitrate = Math.floor(8 * (bytes - previousBytesSent) / deltaTime);
 
       let lost = 0;
+      let sent = 0;
       if (report.remoteId && results[report.remoteId]) {
         lost = results[report.remoteId].packetsLost;
-      } else if (report.packetsLost) {
-        lost = parseInt(report.packetsLost, 10);
+      } else if (report.packetsLost || report.packetsSent) {
+        if (report.packetsLost) {
+          lost = parseInt(report.packetsLost, 10);
+        }
+        if (report.packetsSent) {
+          sent = parseInt(report.packetsSent, 10);
+        }
+      }
+      let loss = 0;
+      if (sent > 0) {
+        loss = Math.floor((lost / sent) * 100);
       }
 
-      event.tracks.push({ track, kind, bitrate, lost, muted });
+      // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
+      // and use only `loss` which is percentage loss
+      event.tracks.push({ track, kind, bitrate, lost, muted, loss });
     });
 
     if (updateLastResult) {
