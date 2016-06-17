@@ -13,7 +13,6 @@ matrix:
   fast_finish: true
 
 install:
-  - npm install -g bower
   - npm install
 
 script:
