@@ -112,7 +112,7 @@
         "type": "ssrc",
         "googCaptureStartNtpTimeMs": "3675154416569",
         "googTargetDelayMs": "80",
-        "packetsLost": "216",
+        "packetsLost": "2521",
         "googDecodeMs": "2",
         "googFrameHeightReceived": "480",
         "packetsReceived": "126027",
