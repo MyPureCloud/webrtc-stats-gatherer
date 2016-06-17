@@ -85,9 +85,9 @@ class StatsGatherer extends EventEmitter {
         }
       }
 
-      const bytes = local ? report.bytesSent : report.bytesReceived;
+      const bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
       const lastResultReport = this.lastResult[report.id];
-      const previousBytesTotal = local ? lastResultReport.bytesSent : lastResultReport.bytesReceived;
+      const previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
       const deltaTime = now - new Date(lastResultReport.timestamp);
       const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
 
@@ -97,13 +97,13 @@ class StatsGatherer extends EventEmitter {
         lost = results[report.remoteId].packetsLost;
       } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
         if (report.packetsLost) {
-          lost = parseInt(report.packetsLost, 10);
+          lost = parseInt(report.packetsLost, 10) || 0;
         }
         if (local && report.packetsSent) {
-          total = parseInt(report.packetsSent, 10);
+          total = parseInt(report.packetsSent, 10) || 0;
         }
         if (!local && report.packetsReceived) {
-          total = parseInt(report.packetsReceived, 10);
+          total = parseInt(report.packetsReceived, 10) || 0;
         }
       }
       let loss = 0;
