@@ -498,7 +498,7 @@
         "googFrameHeightInput": "480",
         "googFrameWidthInput": "640",
         "googFrameWidthSent": "640",
-        "packetsLost": "0",
+        "packetsLost": "100",
         "googRtt": "0",
         "googEncodeUsagePercent": "11",
         "googCpuLimitedResolution": "false",
