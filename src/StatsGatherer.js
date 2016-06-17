@@ -39,7 +39,8 @@ class StatsGatherer extends EventEmitter {
       session: this.session,
       initiator: this.initiator,
       conference: this.conference,
-      tracks: []
+      tracks: [],
+      remoteTracks: []
     };
 
     Object.keys(results).forEach((key) => {
@@ -48,12 +49,12 @@ class StatsGatherer extends EventEmitter {
       const track = report.trackIdentifier || report.googTrackId || report.id;
       let kind = report.mediaType;
 
-      const local = report.type === 'outboundrtp' && report.isRemote === false;
-      const activeSource = report.type === 'ssrc' && report.bytesSent;
+      const activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
 
-      if (!local && !activeSource) {
+      if (!activeSource) {
         return;
       }
+      const local = !!report.bytesSent;
 
       if (!this.lastResult || !this.lastResult[report.id] || this.lastResult[report.id].timestamp >= now) {
         return;
@@ -84,31 +85,40 @@ class StatsGatherer extends EventEmitter {
         }
       }
 
-      const bytes = report.bytesSent;
-      const previousBytesSent = this.lastResult[report.id].bytesSent;
-      const deltaTime = now - new Date(this.lastResult[report.id].timestamp);
-      const bitrate = Math.floor(8 * (bytes - previousBytesSent) / deltaTime);
+      const bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
+      const lastResultReport = this.lastResult[report.id];
+      const previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
+      const deltaTime = now - new Date(lastResultReport.timestamp);
+      const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
 
       let lost = 0;
-      let sent = 0;
+      let total = 0;
       if (report.remoteId && results[report.remoteId]) {
         lost = results[report.remoteId].packetsLost;
-      } else if (report.packetsLost || report.packetsSent) {
+      } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
         if (report.packetsLost) {
-          lost = parseInt(report.packetsLost, 10);
+          lost = parseInt(report.packetsLost, 10) || 0;
         }
-        if (report.packetsSent) {
-          sent = parseInt(report.packetsSent, 10);
+        if (local && report.packetsSent) {
+          total = parseInt(report.packetsSent, 10) || 0;
+        }
+        if (!local && report.packetsReceived) {
+          total = parseInt(report.packetsReceived, 10) || 0;
         }
       }
       let loss = 0;
-      if (sent > 0) {
-        loss = Math.floor((lost / sent) * 100);
+      if (total > 0) {
+        loss = Math.floor((lost / total) * 100);
       }
 
       // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
       // and use only `loss` which is percentage loss
-      event.tracks.push({ track, kind, bitrate, lost, muted, loss });
+      const trackInfo = { track, kind, bitrate, lost, muted, loss };
+      if (local) {
+        event.tracks.push(trackInfo);
+      } else {
+        event.remoteTracks.push(trackInfo);
+      }
     });
 
     if (updateLastResult) {

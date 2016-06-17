@@ -42,32 +42,37 @@ describe('StatsGatherer', function () {
   });
 
   describe('_createStatsReport', function () {
-    it('should create a report', function () {
-      const opts = {
+    let opts, gatherer, report1, report2;
+
+    beforeEach(function () {
+      opts = {
         session: {},
         conference: {}
       };
-      const gatherer = new StatsGatherer(rtcPeerConnection, opts);
-      const report1 = gatherer._createStatsReport(mockStats1, true);
+      gatherer = new StatsGatherer(rtcPeerConnection, opts);
+      report1 = gatherer._createStatsReport(mockStats1, true);
+      report2 = gatherer._createStatsReport(mockStats2, true);
+    });
 
+    it('should create a report', function () {
       assert.ok(report1);
       assert.equal(report1.name, 'getStats');
       assert.deepEqual(report1.session, opts.session);
       assert.deepEqual(report1.conference, opts.conference);
-
       assert.equal(report1.tracks.length, 0);
 
-      const report2 = gatherer._createStatsReport(mockStats2, true);
       assert.ok(report2);
       assert.equal(report2.name, 'getStats');
       assert.deepEqual(report2.session, opts.session);
       assert.deepEqual(report2.conference, opts.conference);
-
       assert.equal(report2.tracks.length, 2);
+    });
 
+    it('should accurately get track properties for the report', function () {
       const audioTrack = report2.tracks[0];
       assert.ok(audioTrack.track);
       assert.ok(audioTrack.bitrate);
+      assert.equal(isNaN(audioTrack.bitrate), false);
       assert.equal(audioTrack.kind, 'audio');
       assert.equal(audioTrack.lost, 18);
       assert.equal(audioTrack.loss, 0);
@@ -76,9 +81,32 @@ describe('StatsGatherer', function () {
       const videoTrack = report2.tracks[1];
       assert.ok(videoTrack.track);
       assert.ok(videoTrack.bitrate);
+      assert.equal(isNaN(videoTrack.bitrate), false);
       assert.equal(videoTrack.kind, 'video');
       assert.equal(videoTrack.lost, 10000);
       assert.equal(videoTrack.loss, 8);
+      assert.equal(videoTrack.muted, false);
+    });
+
+    it('should include remote tracks', function () {
+      assert.equal(report2.remoteTracks.length, 2);
+
+      const audioTrack = report2.remoteTracks[0];
+      assert.ok(audioTrack.track);
+      assert.ok(audioTrack.bitrate);
+      assert.equal(isNaN(audioTrack.bitrate), false);
+      assert.equal(audioTrack.kind, 'audio');
+      assert.equal(audioTrack.lost, 23);
+      assert.equal(audioTrack.loss, 0);
+      assert.equal(audioTrack.muted, false);
+
+      const videoTrack = report2.remoteTracks[1];
+      assert.ok(videoTrack.track);
+      assert.ok(videoTrack.bitrate);
+      assert.equal(isNaN(videoTrack.bitrate), false);
+      assert.equal(videoTrack.kind, 'video');
+      assert.equal(videoTrack.lost, 2521);
+      assert.equal(videoTrack.loss, 2);
       assert.equal(videoTrack.muted, false);
     });
 
