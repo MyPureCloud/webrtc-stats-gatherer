@@ -69,7 +69,7 @@ describe('StatsGatherer', function () {
       assert.ok(audioTrack.track);
       assert.ok(audioTrack.bitrate);
       assert.equal(audioTrack.kind, 'audio');
-      assert.equal(audioTrack.lost, 0);
+      assert.equal(audioTrack.lost, 18);
       assert.equal(audioTrack.loss, 0);
       assert.equal(audioTrack.muted, false);
 
@@ -77,8 +77,8 @@ describe('StatsGatherer', function () {
       assert.ok(videoTrack.track);
       assert.ok(videoTrack.bitrate);
       assert.equal(videoTrack.kind, 'video');
-      assert.equal(videoTrack.lost, 100);
-      assert.equal(videoTrack.loss, 7);
+      assert.equal(videoTrack.lost, 10000);
+      assert.equal(videoTrack.loss, 8);
       assert.equal(videoTrack.muted, false);
     });
 
