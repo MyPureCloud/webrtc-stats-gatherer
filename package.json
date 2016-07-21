@@ -5,8 +5,8 @@
   "main": "src/StatsGatherer.js",
   "scripts": {
     "lint": "node_modules/.bin/semistandard",
-    "compile": "node_modules/.bin/browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ es2015 ] ]",
-    "prepublish": "npm run compile && npm run _test",
+    "build": "node_modules/.bin/browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ es2015 ] ]",
+    "prepublish": "npm run build && npm run _test",
     "_test": "node_modules/.bin/mocha --compilers js:babel-core/register test/test.js",
     "test-server": "npm run _test -- -w",
     "test": "npm run lint && npm run _test"

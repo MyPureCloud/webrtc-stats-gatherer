@@ -1,22 +1,34 @@
 /* global describe, it, beforeEach */
 
+if (typeof window === 'undefined') {
+  GLOBAL.window = {
+    navigator: {
+      userAgent: 'user-agent',
+      hardwareConcurrency: 8,
+      platform: 'tests'
+    },
+    performance: {
+      now: () => new Date().getTime()
+    }
+  };
+}
+
 import { assert } from 'chai';
 import sinon from 'sinon';
 import StatsGatherer from '../src/StatsGatherer';
-// import mockInitialStats from './mock-initial-stats.json';
+import mockInitialStats from './mock-initial-stats.json';
 import mockStats1 from './mock-stats-1.json';
 import mockStats2 from './mock-stats-2.json';
+import { EventEmitter } from 'events';
 
 describe('StatsGatherer', function () {
   let rtcPeerConnection;
 
   beforeEach(function () {
-    rtcPeerConnection = {
-      on: function () {},
-      pc: {
-        peerconnection: {
-          getStats: () => Promise.resolve(mockStats1)
-        }
+    rtcPeerConnection = new EventEmitter();
+    rtcPeerConnection.pc = {
+      peerconnection: {
+        getStats: () => Promise.resolve(mockStats1)
       }
     };
   });
@@ -121,7 +133,29 @@ describe('StatsGatherer', function () {
   });
 
   describe('collectInitialConnectionStats', function () {
-    it('should get emit a stats event with all of the initial connection information');
+    let opts, gatherer;
+
+    beforeEach(function () {
+      opts = {
+        session: {},
+        conference: {}
+      };
+      gatherer = new StatsGatherer(rtcPeerConnection, opts);
+    });
+
+    it('should get emit a stats event with all of the initial connection information', function (done) {
+      sinon.stub(gatherer, '_gatherStats').returns(Promise.resolve(mockInitialStats));
+      gatherer.on('stats', function (stats) {
+        assert.ok(stats.userAgent);
+        assert.ok(stats.platform);
+        assert.ok(stats.cores);
+        done();
+      });
+      gatherer.collectInitialConnectionStats();
+      gatherer.connection.iceConnectionState = 'connected';
+      gatherer.connection.emit('iceConnectionStateChange');
+    });
+
     it('should emit a failure report if the state is failed');
   });
 
