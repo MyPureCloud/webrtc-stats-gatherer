@@ -305,6 +305,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _events = require('events');
@@ -315,6 +317,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var IS_BROWSER = void 0;
+
 var StatsGatherer = function (_EventEmitter) {
   _inherits(StatsGatherer, _EventEmitter);
 
@@ -322,6 +326,8 @@ var StatsGatherer = function (_EventEmitter) {
     var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
     _classCallCheck(this, StatsGatherer);
+
+    IS_BROWSER = typeof window !== 'undefined';
 
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(StatsGatherer).call(this));
 
@@ -500,8 +506,10 @@ var StatsGatherer = function (_EventEmitter) {
             });
           };
 
-          window.setTimeout(statsPoll, 0);
-          _this4._pollingInterval = window.setInterval(statsPoll, _this4.statsInterval);
+          if (IS_BROWSER) {
+            window.setTimeout(statsPoll, 0);
+            _this4._pollingInterval = window.setInterval(statsPoll, _this4.statsInterval);
+          }
         }
 
         if (state === 'disconnected') {
@@ -518,7 +526,9 @@ var StatsGatherer = function (_EventEmitter) {
 
         if (state === 'closed') {
           if (_this4._pollingInterval) {
-            window.clearInterval(_this4._pollingInterval);
+            if (IS_BROWSER) {
+              window.clearInterval(_this4._pollingInterval);
+            }
             _this4._pollingInterval = null;
           }
         }
@@ -533,95 +543,115 @@ var StatsGatherer = function (_EventEmitter) {
         var state = _this5.connection.iceConnectionState;
 
         if (state === 'checking') {
-          _this5._iceStartTime = window.performance.now();
+          if (IS_BROWSER) {
+            _this5._iceStartTime = window.performance.now();
+          }
         }
 
         if (state === 'connected' || state === 'completed') {
-          if (_this5._haveConnectionMetrics) {
-            return;
-          }
-
-          _this5._haveConnectionMetrics = true;
-          _this5._iceConnectionTime = window.performance.now() - _this5._iceStartTime;
-
-          _this5._gatherStats().then(function (reports) {
-            var event = {
-              name: 'connect',
-              session: _this5.session,
-              initiator: _this5.initiator,
-              conference: _this5.conference,
-              connectTime: _this5._iceConnectionTime,
-              hadLocalIPv6Candidate: _this5.connection.hadLocalIPv6Candidate,
-              hadRemoteIPv6Candidate: _this5.connection.hadRemoteIPv6Candidate,
-              hadLocalRelayCandidate: _this5.connection.hadLocalRelayCandidate,
-              hadRemoteRelayCandidate: _this5.connection.hadremoteRelayCandidate
-            };
-
-            var activeCandidatePair = null;
-            Object.keys(reports).forEach(function (key) {
-              var report = reports[key];
-
-              var selected = report.type === 'candidatepair' && report.selected;
-              var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
-              if (selected || chromeSelected) {
-                activeCandidatePair = report;
-              }
-            });
-
-            if (activeCandidatePair) {
-              (function () {
-                var localId = activeCandidatePair.localCandidateId;
-                var remoteId = activeCandidatePair.remoteCandidateId;
-                var localCandidate = void 0,
-                    remoteCandidate = void 0;
-
-                Object.keys(reports).forEach(function (key) {
-                  var report = reports[key];
-                  if (localId && report.type === 'localcandidate' && report.id === localId) {
-                    localCandidate = report;
-                    event.localCandidateType = report.candidateType;
-                  }
-
-                  if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
-                    remoteCandidate = report;
-                    event.remoteCandidateType = report.candidateType;
-                  }
-                });
-
-                if (localCandidate && remoteCandidate) {
-                  event.candidatePair = localCandidate.candidateType + ';' + remoteCandidate.candidateType;
-                  event.candidatePairDetails = {
-                    local: localCandidate,
-                    remote: remoteCandidate
-                  };
-                }
-
-                if (localCandidate) {
-                  event.transport = localCandidate.transport;
-                  if (localCandidate.priority) {
-                    // Chrome-specific mapping;
-                    // but only chrome has priority set on the candidate currently.
-                    var turnTypes = {
-                      2: 'udp',
-                      1: 'tcp',
-                      0: 'tls'
-                    };
-
-                    var priority = parseInt(localCandidate.priority, 10);
-                    event.turnType = turnTypes[priority >> 24];
-                  }
-
-                  event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
-                }
-              })();
+          var _ret = function () {
+            if (_this5._haveConnectionMetrics) {
+              return {
+                v: void 0
+              };
             }
 
-            _this5.emit('stats', event);
-          });
+            _this5._haveConnectionMetrics = true;
+            var userAgent = void 0,
+                platform = void 0,
+                cores = void 0;
+            if (IS_BROWSER) {
+              _this5._iceConnectionTime = window.performance.now() - _this5._iceStartTime;
+              userAgent = window.navigator.userAgent;
+              platform = window.navigator.platform;
+              cores = window.navigator.hardwareConcurrency;
+            }
+
+            _this5._gatherStats().then(function (reports) {
+              var event = {
+                name: 'connect',
+                userAgent: userAgent,
+                platform: platform,
+                cores: cores,
+                session: _this5.session,
+                initiator: _this5.initiator,
+                conference: _this5.conference,
+                connectTime: _this5._iceConnectionTime,
+                hadLocalIPv6Candidate: _this5.connection.hadLocalIPv6Candidate,
+                hadRemoteIPv6Candidate: _this5.connection.hadRemoteIPv6Candidate,
+                hadLocalRelayCandidate: _this5.connection.hadLocalRelayCandidate,
+                hadRemoteRelayCandidate: _this5.connection.hadremoteRelayCandidate
+              };
+
+              var activeCandidatePair = null;
+              Object.keys(reports).forEach(function (key) {
+                var report = reports[key];
+
+                var selected = report.type === 'candidatepair' && report.selected;
+                var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
+                if (selected || chromeSelected) {
+                  activeCandidatePair = report;
+                }
+              });
+
+              if (activeCandidatePair) {
+                (function () {
+                  var localId = activeCandidatePair.localCandidateId;
+                  var remoteId = activeCandidatePair.remoteCandidateId;
+                  var localCandidate = void 0,
+                      remoteCandidate = void 0;
+
+                  Object.keys(reports).forEach(function (key) {
+                    var report = reports[key];
+                    if (localId && report.type === 'localcandidate' && report.id === localId) {
+                      localCandidate = report;
+                      event.localCandidateType = report.candidateType;
+                    }
+
+                    if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+                      remoteCandidate = report;
+                      event.remoteCandidateType = report.candidateType;
+                    }
+                  });
+
+                  if (localCandidate && remoteCandidate) {
+                    event.candidatePair = localCandidate.candidateType + ';' + remoteCandidate.candidateType;
+                    event.candidatePairDetails = {
+                      local: localCandidate,
+                      remote: remoteCandidate
+                    };
+                  }
+
+                  if (localCandidate) {
+                    event.transport = localCandidate.transport;
+                    if (localCandidate.priority) {
+                      // Chrome-specific mapping;
+                      // but only chrome has priority set on the candidate currently.
+                      var turnTypes = {
+                        2: 'udp',
+                        1: 'tcp',
+                        0: 'tls'
+                      };
+
+                      var priority = parseInt(localCandidate.priority, 10);
+                      event.turnType = turnTypes[priority >> 24];
+                    }
+
+                    event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
+                  }
+                })();
+              }
+              _this5.emit('stats', event);
+            });
+          }();
+
+          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
         }
 
         if (state === 'failed') {
-          _this5._iceFailedTime = window.performance.now() - _this5._iceStartTime;
+          if (IS_BROWSER) {
+            _this5._iceFailedTime = window.performance.now() - _this5._iceStartTime;
+          }
           _this5._gatherStats().then(function (reports) {
             var event = {
               name: 'failure',
