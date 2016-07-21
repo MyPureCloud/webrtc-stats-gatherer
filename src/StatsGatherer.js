@@ -1,7 +1,10 @@
 import { EventEmitter } from 'events';
 
+let IS_BROWSER;
+
 class StatsGatherer extends EventEmitter {
   constructor (peerConnection, opts = {}) {
+    IS_BROWSER = typeof window !== 'undefined';
     super();
 
     this.connection = peerConnection;
@@ -167,8 +170,10 @@ class StatsGatherer extends EventEmitter {
           });
         };
 
-        window.setTimeout(statsPoll, 0);
-        this._pollingInterval = window.setInterval(statsPoll, this.statsInterval);
+        if (IS_BROWSER) {
+          window.setTimeout(statsPoll, 0);
+          this._pollingInterval = window.setInterval(statsPoll, this.statsInterval);
+        }
       }
 
       if (state === 'disconnected') {
@@ -185,7 +190,9 @@ class StatsGatherer extends EventEmitter {
 
       if (state === 'closed') {
         if (this._pollingInterval) {
-          window.clearInterval(this._pollingInterval);
+          if (IS_BROWSER) {
+            window.clearInterval(this._pollingInterval);
+          }
           this._pollingInterval = null;
         }
       }
@@ -197,7 +204,9 @@ class StatsGatherer extends EventEmitter {
       const state = this.connection.iceConnectionState;
 
       if (state === 'checking') {
-        this._iceStartTime = window.performance.now();
+        if (IS_BROWSER) {
+          this._iceStartTime = window.performance.now();
+        }
       }
 
       if (state === 'connected' || state === 'completed') {
@@ -206,11 +215,20 @@ class StatsGatherer extends EventEmitter {
         }
 
         this._haveConnectionMetrics = true;
-        this._iceConnectionTime = window.performance.now() - this._iceStartTime;
+        let userAgent, platform, cores;
+        if (IS_BROWSER) {
+          this._iceConnectionTime = window.performance.now() - this._iceStartTime;
+          userAgent = window.navigator.userAgent;
+          platform = window.navigator.platform;
+          cores = window.navigator.hardwareConcurrency;
+        }
 
         this._gatherStats().then((reports) => {
           const event = {
             name: 'connect',
+            userAgent,
+            platform,
+            cores,
             session: this.session,
             initiator: this.initiator,
             conference: this.conference,
@@ -276,13 +294,14 @@ class StatsGatherer extends EventEmitter {
               event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
             }
           }
-
           this.emit('stats', event);
         });
       }
 
       if (state === 'failed') {
-        this._iceFailedTime = window.performance.now() - this._iceStartTime;
+        if (IS_BROWSER) {
+          this._iceFailedTime = window.performance.now() - this._iceStartTime;
+        }
         this._gatherStats().then((reports) => {
           const event = {
             name: 'failure',
