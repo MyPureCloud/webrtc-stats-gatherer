@@ -58,8 +58,12 @@ EventEmitter.prototype.emit = function(type) {
       er = arguments[1];
       if (er instanceof Error) {
         throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
       }
-      throw TypeError('Uncaught, unspecified "error" event.');
     }
   }
 
@@ -329,7 +333,7 @@ var StatsGatherer = function (_EventEmitter) {
 
     IS_BROWSER = typeof window !== 'undefined';
 
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(StatsGatherer).call(this));
+    var _this = _possibleConstructorReturn(this, (StatsGatherer.__proto__ || Object.getPrototypeOf(StatsGatherer)).call(this));
 
     _this.connection = peerConnection;
     _this.session = opts.session;
@@ -425,28 +429,49 @@ var StatsGatherer = function (_EventEmitter) {
         var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
 
         var lost = 0;
+        var previousLost = 0;
         var total = 0;
+        var previousTotal = 0;
         if (report.remoteId && results[report.remoteId]) {
           lost = results[report.remoteId].packetsLost;
+          previousLost = lastResultReport.packetsLost;
+
+          if (lost < previousLost) {
+            console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
+            lost = previousLost;
+            results[report.remoteId].packetsLost = lost;
+          }
         } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
           if (report.packetsLost) {
             lost = parseInt(report.packetsLost, 10) || 0;
+            previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
+
+            if (lost < previousLost) {
+              console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
+              lost = previousLost;
+              report.packetsLost = '' + lost;
+            }
           }
           if (local && report.packetsSent) {
             total = parseInt(report.packetsSent, 10) || 0;
+            previousTotal = parseInt(lastResultReport.packetsSent, 10) || 0;
           }
           if (!local && report.packetsReceived) {
             total = parseInt(report.packetsReceived, 10) || 0;
+            previousTotal = parseInt(lastResultReport.packetsReceived, 10) || 0;
           }
         }
+
         var loss = 0;
         if (total > 0) {
           loss = Math.floor(lost / total * 100);
         }
 
+        var intervalLoss = Math.floor((lost - previousLost) / (total - previousTotal) * 100) || 0;
+
         // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
         // and use only `loss` which is percentage loss
-        var trackInfo = { track: track, kind: kind, bitrate: bitrate, lost: lost, muted: muted, loss: loss };
+        var trackInfo = { track: track, kind: kind, bitrate: bitrate, lost: lost, muted: muted, loss: loss, intervalLoss: intervalLoss };
         if (local) {
           event.tracks.push(trackInfo);
         } else {

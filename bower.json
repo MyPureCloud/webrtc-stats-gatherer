@@ -2,6 +2,7 @@
   "name": "webrtc-stats-gatherer",
   "description": "Gathers stats on interval for webrtc peer connection",
   "main": "src/StatsGatherer.js",
+  "version" : "1.2.0",
   "authors": [
     "Fippo Hancke",
     "Lance Stout",
