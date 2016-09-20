@@ -58,12 +58,8 @@ EventEmitter.prototype.emit = function(type) {
       er = arguments[1];
       if (er instanceof Error) {
         throw er; // Unhandled 'error' event
-      } else {
-        // At least give some kind of context to the user
-        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
-        err.context = er;
-        throw err;
       }
+      throw TypeError('Uncaught, unspecified "error" event.');
     }
   }
 
@@ -333,7 +329,7 @@ var StatsGatherer = function (_EventEmitter) {
 
     IS_BROWSER = typeof window !== 'undefined';
 
-    var _this = _possibleConstructorReturn(this, (StatsGatherer.__proto__ || Object.getPrototypeOf(StatsGatherer)).call(this));
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(StatsGatherer).call(this));
 
     _this.connection = peerConnection;
     _this.session = opts.session;
@@ -437,7 +433,7 @@ var StatsGatherer = function (_EventEmitter) {
           previousLost = lastResultReport.packetsLost;
 
           if (lost < previousLost) {
-            console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
+            _this2.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
             lost = previousLost;
             results[report.remoteId].packetsLost = lost;
           }
@@ -447,7 +443,7 @@ var StatsGatherer = function (_EventEmitter) {
             previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
 
             if (lost < previousLost) {
-              console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
+              _this2.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
               lost = previousLost;
               report.packetsLost = '' + lost;
             }
@@ -704,10 +700,10 @@ var StatsGatherer = function (_EventEmitter) {
             });
 
             var localCandidates = _this5.connection.pc.localDescription.sdp.split('\r\n').filter(function (line) {
-              return line.indexOf('a=candidate:');
+              return line.indexOf('a=candidate:') > -1;
             });
             var remoteCandidates = _this5.connection.pc.remoteDescription.sdp.split('\r\n').filter(function (line) {
-              return line.indexOf('a=candidate:');
+              return line.indexOf('a=candidate:') > -1;
             });
 
             ['Host', 'Srflx', 'Relay'].forEach(function (type) {

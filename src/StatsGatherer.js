@@ -103,7 +103,7 @@ class StatsGatherer extends EventEmitter {
         previousLost = lastResultReport.packetsLost;
 
         if (lost < previousLost) {
-          console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
+          this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
           lost = previousLost;
           results[report.remoteId].packetsLost = lost;
         }
@@ -113,7 +113,7 @@ class StatsGatherer extends EventEmitter {
           previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
 
           if (lost < previousLost) {
-            console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
+            this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
             lost = previousLost;
             report.packetsLost = `${lost}`;
           }
