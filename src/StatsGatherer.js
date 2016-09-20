@@ -350,10 +350,10 @@ class StatsGatherer extends EventEmitter {
           });
 
           const localCandidates = this.connection.pc.localDescription.sdp.split('\r\n').filter(function (line) {
-            return line.indexOf('a=candidate:');
+            return line.indexOf('a=candidate:') > -1;
           });
           const remoteCandidates = this.connection.pc.remoteDescription.sdp.split('\r\n').filter(function (line) {
-            return line.indexOf('a=candidate:');
+            return line.indexOf('a=candidate:') > -1;
           });
 
           ['Host', 'Srflx', 'Relay'].forEach(function (type) {

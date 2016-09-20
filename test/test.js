@@ -19,6 +19,7 @@ import StatsGatherer from '../src/StatsGatherer';
 import mockInitialStats from './mock-initial-stats.json';
 import mockStats1 from './mock-stats-1.json';
 import mockStats2 from './mock-stats-2.json';
+import mockSdp from './mock-sdp.json';
 import { EventEmitter } from 'events';
 
 describe('StatsGatherer', function () {
@@ -220,7 +221,30 @@ describe('StatsGatherer', function () {
       gatherer.connection.emit('iceConnectionStateChange');
     });
 
-    it('should emit a failure report if the state is failed');
+    it('should emit a failure report if the state is failed', function (done) {
+      sinon.stub(gatherer, '_gatherStats').returns(Promise.resolve(mockStats1));
+      gatherer.on('stats', function (event) {
+        assert.equal(event.name, 'failure');
+        try {
+          assert.ok(event.numLocalHostCandidates > 0, 'has local host candidates');
+          assert.ok(event.numLocalSrflxCandidates > 0, 'has local srflx candidates');
+          assert.ok(event.numLocalRelayCandidates > 0, 'has local relay candidates');
+          assert.ok(event.numRemoteHostCandidates > 0, 'has remote host candidates');
+          assert.ok(event.numRemoteSrflxCandidates > 0, 'has remote srflx candidates');
+          assert.ok(event.numRemoteRelayCandidates > 0, 'has remote relay candidates');
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+      gatherer.collectInitialConnectionStats();
+      gatherer.connection.iceConnectionState = 'failed';
+      gatherer.connection.pc = {
+        localDescription: { sdp: mockSdp.sdp },
+        remoteDescription: { sdp: mockSdp.sdp }
+      };
+      gatherer.connection.emit('iceConnectionStateChange');
+    });
   });
 
   describe('collectTraces', function () {
