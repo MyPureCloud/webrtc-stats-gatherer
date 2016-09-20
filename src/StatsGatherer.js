@@ -95,28 +95,49 @@ class StatsGatherer extends EventEmitter {
       const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
 
       let lost = 0;
+      let previousLost = 0;
       let total = 0;
+      let previousTotal = 0;
       if (report.remoteId && results[report.remoteId]) {
         lost = results[report.remoteId].packetsLost;
+        previousLost = lastResultReport.packetsLost;
+
+        if (lost < previousLost) {
+          console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
+          lost = previousLost;
+          results[report.remoteId].packetsLost = lost;
+        }
       } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
         if (report.packetsLost) {
           lost = parseInt(report.packetsLost, 10) || 0;
+          previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
+
+          if (lost < previousLost) {
+            console.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
+            lost = previousLost;
+            report.packetsLost = `${lost}`;
+          }
         }
         if (local && report.packetsSent) {
           total = parseInt(report.packetsSent, 10) || 0;
+          previousTotal = parseInt(lastResultReport.packetsSent, 10) || 0;
         }
         if (!local && report.packetsReceived) {
           total = parseInt(report.packetsReceived, 10) || 0;
+          previousTotal = parseInt(lastResultReport.packetsReceived, 10) || 0;
         }
       }
+
       let loss = 0;
       if (total > 0) {
         loss = Math.floor((lost / total) * 100);
       }
 
+      const intervalLoss = Math.floor((lost - previousLost) / (total - previousTotal) * 100) || 0;
+
       // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
       // and use only `loss` which is percentage loss
-      const trackInfo = { track, kind, bitrate, lost, muted, loss };
+      const trackInfo = { track, kind, bitrate, lost, muted, loss, intervalLoss };
       if (local) {
         event.tracks.push(trackInfo);
       } else {
