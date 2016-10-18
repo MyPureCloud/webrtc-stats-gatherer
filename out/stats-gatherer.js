@@ -58,8 +58,12 @@ EventEmitter.prototype.emit = function(type) {
       er = arguments[1];
       if (er instanceof Error) {
         throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
       }
-      throw TypeError('Uncaught, unspecified "error" event.');
     }
   }
 
@@ -329,7 +333,7 @@ var StatsGatherer = function (_EventEmitter) {
 
     IS_BROWSER = typeof window !== 'undefined';
 
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(StatsGatherer).call(this));
+    var _this = _possibleConstructorReturn(this, (StatsGatherer.__proto__ || Object.getPrototypeOf(StatsGatherer)).call(this));
 
     _this.connection = peerConnection;
     _this.session = opts.session;
@@ -467,7 +471,17 @@ var StatsGatherer = function (_EventEmitter) {
 
         // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
         // and use only `loss` which is percentage loss
-        var trackInfo = { track: track, kind: kind, bitrate: bitrate, lost: lost, muted: muted, loss: loss, intervalLoss: intervalLoss };
+        var trackInfo = {
+          track: track,
+          kind: kind,
+          bitrate: bitrate,
+          lost: lost,
+          muted: muted,
+          loss: loss,
+          intervalLoss: intervalLoss,
+          bytesSent: parseInt(report.bytesSent, 10),
+          bytesReceived: parseInt(report.bytesReceived, 10)
+        };
         if (local) {
           event.tracks.push(trackInfo);
         } else {
