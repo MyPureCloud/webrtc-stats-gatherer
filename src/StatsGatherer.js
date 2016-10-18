@@ -116,7 +116,16 @@ class StatsGatherer extends EventEmitter {
 
       // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
       // and use only `loss` which is percentage loss
-      const trackInfo = { track, kind, bitrate, lost, muted, loss };
+      const trackInfo = {
+        track,
+        kind,
+        bitrate,
+        lost,
+        muted,
+        loss,
+        bytesSent: parseInt(report.bytesSent, 10),
+        bytesReceived: parseInt(report.bytesReceived, 10)
+      };
       if (local) {
         event.tracks.push(trackInfo);
       } else {
