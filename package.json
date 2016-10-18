@@ -1,6 +1,6 @@
 {
   "name": "webrtc-stats-gatherer",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Gathers stats on interval for webrtc peer connection",
   "main": "src/StatsGatherer.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "webrtc",
     "stats"
   ],
-  "author": "Fippo Hancke, Lance Stout, Xander Dumaine",
+  "author": "Xander Dumaine <xander.dumaine@inin.com>, Garrett Jensen <garrett.jensen@inin.com>, Fippo & Lance <3",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/mypurecloud/webrtc-stats-gatherer/issues"
