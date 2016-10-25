@@ -93,6 +93,8 @@ class StatsGatherer extends EventEmitter {
       const previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
       const deltaTime = now - new Date(lastResultReport.timestamp);
       const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
+      const bytesSent = parseInt(report.bytesSent, 10) || -1;
+      const bytesReceived = parseInt(report.bytesSent, 10) || -1;
 
       let lost = 0;
       let previousLost = 0;
@@ -145,9 +147,10 @@ class StatsGatherer extends EventEmitter {
         muted,
         loss,
         intervalLoss,
-        bytesSent: parseInt(report.bytesSent, 10),
-        bytesReceived: parseInt(report.bytesReceived, 10)
+        bytesSent,
+        bytesReceived
       };
+
       if (local) {
         event.tracks.push(trackInfo);
       } else {
