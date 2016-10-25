@@ -93,6 +93,8 @@ class StatsGatherer extends EventEmitter {
       const previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
       const deltaTime = now - new Date(lastResultReport.timestamp);
       const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
+      const bytesSent = parseInt(report.bytesSent, 10) || -1;
+      const bytesReceived = parseInt(report.bytesSent, 10) || -1;
 
       let lost = 0;
       let previousLost = 0;
@@ -137,7 +139,18 @@ class StatsGatherer extends EventEmitter {
 
       // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
       // and use only `loss` which is percentage loss
-      const trackInfo = { track, kind, bitrate, lost, muted, loss, intervalLoss };
+      const trackInfo = {
+        track,
+        kind,
+        bitrate,
+        lost,
+        muted,
+        loss,
+        intervalLoss,
+        bytesSent,
+        bytesReceived
+      };
+
       if (local) {
         event.tracks.push(trackInfo);
       } else {
