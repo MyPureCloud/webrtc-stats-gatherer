@@ -427,6 +427,8 @@ var StatsGatherer = function (_EventEmitter) {
         var previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
         var deltaTime = now - new Date(lastResultReport.timestamp);
         var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
+        var bytesSent = parseInt(report.bytesSent, 10) || -1;
+        var bytesReceived = parseInt(report.bytesSent, 10) || -1;
 
         var lost = 0;
         var previousLost = 0;
@@ -479,9 +481,10 @@ var StatsGatherer = function (_EventEmitter) {
           muted: muted,
           loss: loss,
           intervalLoss: intervalLoss,
-          bytesSent: parseInt(report.bytesSent, 10),
-          bytesReceived: parseInt(report.bytesReceived, 10)
+          bytesSent: bytesSent,
+          bytesReceived: bytesReceived
         };
+
         if (local) {
           event.tracks.push(trackInfo);
         } else {
