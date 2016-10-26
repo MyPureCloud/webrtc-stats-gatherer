@@ -96,6 +96,16 @@ class StatsGatherer extends EventEmitter {
       const bytesSent = parseInt(report.bytesSent, 10) || -1;
       const bytesReceived = parseInt(report.bytesSent, 10) || -1;
 
+      const rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
+      if (rtt !== -1) {
+        event[`${kind}Rtt`] = rtt;
+      }
+
+      const jitter = parseInt(report.googJitterReceived || report.mozJitterReceived || report.jitter, 10) || -1;
+      if (jitter !== -1) {
+        event[`${kind}Jitter`] = jitter;
+      }
+
       let lost = 0;
       let previousLost = 0;
       let total = 0;

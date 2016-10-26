@@ -186,6 +186,13 @@ describe('StatsGatherer', function () {
         assert.equal(videoTrack.muted, false);
       });
 
+      it('should include rtt and jitter', function () {
+        assert.equal(report2.audioRtt, 23);
+        assert.equal(report2.videoRtt, 23);
+        assert.equal(report2.audioJitter, 2);
+        assert.equal(report2.videoJitter, undefined); // no video jitter reported in mock stats
+      });
+
       it('should properly determine a track kind');
       it('should determine bitrate accurately');
       it('should determine the track kind from the code type if not available otherwise');
