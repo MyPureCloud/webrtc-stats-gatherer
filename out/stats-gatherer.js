@@ -430,6 +430,16 @@ var StatsGatherer = function (_EventEmitter) {
         var bytesSent = parseInt(report.bytesSent, 10) || -1;
         var bytesReceived = parseInt(report.bytesSent, 10) || -1;
 
+        var rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
+        if (rtt !== -1) {
+          event[kind + 'Rtt'] = rtt;
+        }
+
+        var jitter = parseInt(report.googJitterReceived || report.mozJitterReceived || report.jitter, 10) || -1;
+        if (jitter !== -1) {
+          event[kind + 'Jitter'] = jitter;
+        }
+
         var lost = 0;
         var previousLost = 0;
         var total = 0;
