@@ -97,7 +97,7 @@ class StatsGatherer extends EventEmitter {
       const deltaTime = now - new Date(lastResultReport.timestamp);
       const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
       const bytesSent = parseInt(report.bytesSent, 10) || -1;
-      const bytesReceived = parseInt(report.bytesSent, 10) || -1;
+      const bytesReceived = parseInt(report.bytesReceived, 10) || -1;
 
       const rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
       if (rtt !== -1) {
@@ -196,11 +196,6 @@ class StatsGatherer extends EventEmitter {
 
   collectStats () {
     this.connection.on('iceConnectionStateChange', () => {
-      // Not interested in receive only streams
-      if (this.connection.getLocalStreams().length === 0) {
-        return;
-      }
-
       const state = this.connection.iceConnectionState;
 
       if (state === 'connected' || state === 'completed') {
@@ -211,7 +206,7 @@ class StatsGatherer extends EventEmitter {
         const statsPoll = () => {
           this._gatherStats().then((reports) => {
             const event = this._createStatsReport(reports, true);
-            if (event.tracks.length > 0) {
+            if (event.tracks.length > 0 || event.remoteTracks.length > 0) {
               this.emit('stats', event);
             }
           });

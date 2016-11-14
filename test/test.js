@@ -1,4 +1,4 @@
-/* global describe, it, beforeEach */
+/* global describe, it, beforeEach, afterEach */
 
 if (typeof window === 'undefined') {
   GLOBAL.window = {
@@ -11,6 +11,10 @@ if (typeof window === 'undefined') {
       now: () => new Date().getTime()
     }
   };
+
+  GLOBAL.window.setTimeout = setTimeout.bind(GLOBAL.window);
+  GLOBAL.window.setInterval = setInterval.bind(GLOBAL.window);
+  GLOBAL.window.clearInterval = clearInterval.bind(GLOBAL.window);
 }
 
 import { assert } from 'chai';
@@ -19,14 +23,25 @@ import StatsGatherer from '../src/StatsGatherer';
 import mockInitialStats from './mock-initial-stats.json';
 import mockStats1 from './mock-stats-1.json';
 import mockStats2 from './mock-stats-2.json';
+import mockStats3 from './mock-stats-3.json';
 import mockSdp from './mock-sdp.json';
 import { EventEmitter } from 'events';
+
+class MockRtcPeerConnection extends EventEmitter {
+  constructor () {
+    super(...arguments);
+    this._localStreams = [];
+  }
+  getLocalStreams () {
+    return this._localStreams;
+  }
+}
 
 describe('StatsGatherer', function () {
   let rtcPeerConnection;
 
   beforeEach(function () {
-    rtcPeerConnection = new EventEmitter();
+    rtcPeerConnection = new MockRtcPeerConnection();
     rtcPeerConnection.pc = {
       peerconnection: {
         getStats: () => Promise.resolve(mockStats1)
@@ -55,7 +70,7 @@ describe('StatsGatherer', function () {
   });
 
   describe('_createStatsReport', function () {
-    let opts, gatherer, report1, report2;
+    let opts, gatherer, report1, report2, report3;
 
     beforeEach(function () {
       opts = {
@@ -117,7 +132,7 @@ describe('StatsGatherer', function () {
 
         report1 = gatherer._createStatsReport(stats1, true);
         report2 = gatherer._createStatsReport(stats2, true);
-        let report3 = gatherer._createStatsReport(stats3, true);
+        report3 = gatherer._createStatsReport(stats3, true);
 
         assert.equal(report2.remoteTracks[0].intervalLoss, 10);
         assert.equal(report3.remoteTracks[0].intervalLoss, 30);
@@ -128,6 +143,7 @@ describe('StatsGatherer', function () {
       beforeEach(function () {
         report1 = gatherer._createStatsReport(mockStats1, true);
         report2 = gatherer._createStatsReport(mockStats2, true);
+        report3 = gatherer._createStatsReport(mockStats3, true);
       });
 
       it('should create a report', function () {
@@ -142,6 +158,12 @@ describe('StatsGatherer', function () {
         assert.deepEqual(report2.session, opts.session);
         assert.deepEqual(report2.conference, opts.conference);
         assert.equal(report2.tracks.length, 2);
+
+        assert.ok(report3);
+        assert.equal(report3.name, 'getStats');
+        assert.deepEqual(report3.session, opts.session);
+        assert.deepEqual(report3.conference, opts.conference);
+        assert.equal(report3.tracks.length, 0);
       });
 
       it('should accurately get track properties for the report', function () {
@@ -200,8 +222,47 @@ describe('StatsGatherer', function () {
   });
 
   describe('collectStats', function () {
+    let opts, gatherer;
+
+    beforeEach(function () {
+      opts = {
+        session: {},
+        conference: {}
+      };
+      gatherer = new StatsGatherer(rtcPeerConnection, opts);
+    });
+
+    afterEach(function () {
+      gatherer.connection.iceConnectionState = 'closed';
+      gatherer.connection.emit('iceConnectionStateChange');
+    });
+
     it('should setup a polling interval when connected');
     it('should emit a stats event if already disconnected');
+
+    it('should collect stats for a recvonly stream', function (done) {
+      sinon.stub(gatherer, '_gatherStats').returns(Promise.resolve(mockStats3));
+
+      let gotInitial = false;
+      gatherer.statsInterval = 10;
+
+      gatherer.on('stats', function (stats) {
+        if (gotInitial) {
+          assert.ok(stats);
+          gatherer.connection.iceConnectionState = 'closed';
+          gatherer.connection.emit('iceConnectionStateChange');
+
+          assert.equal(stats.remoteTracks.length, 1);
+          assert.equal(stats.remoteTracks[0].bytesReceived, 3519798);
+          done();
+        } else {
+          gotInitial = true;
+        }
+      });
+      gatherer.collectStats();
+      gatherer.connection.iceConnectionState = 'connected';
+      gatherer.connection.emit('iceConnectionStateChange');
+    });
   });
 
   describe('collectInitialConnectionStats', function () {
@@ -213,6 +274,11 @@ describe('StatsGatherer', function () {
         conference: {}
       };
       gatherer = new StatsGatherer(rtcPeerConnection, opts);
+    });
+
+    afterEach(function () {
+      gatherer.connection.iceConnectionState = 'closed';
+      gatherer.connection.emit('iceConnectionStateChange');
     });
 
     it('should get emit a stats event with all of the initial connection information', function (done) {
