@@ -37,6 +37,8 @@
     "gulp": "^3.9.1",
     "gulp-istanbul": "^1.1.1",
     "gulp-mocha": "^3.0.1",
+    "gulp-rimraf": "^0.2.1",
+    "gulp-util": "^3.0.7",
     "isparta": "^4.0.0",
     "istanbul": "^0.4.5",
     "mocha": "^2.5.3",
