@@ -309,7 +309,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -327,7 +327,7 @@ var StatsGatherer = function (_EventEmitter) {
   _inherits(StatsGatherer, _EventEmitter);
 
   function StatsGatherer(peerConnection) {
-    var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+    var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
     _classCallCheck(this, StatsGatherer);
 
@@ -431,7 +431,7 @@ var StatsGatherer = function (_EventEmitter) {
         var deltaTime = now - new Date(lastResultReport.timestamp);
         var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
         var bytesSent = parseInt(report.bytesSent, 10) || -1;
-        var bytesReceived = parseInt(report.bytesSent, 10) || -1;
+        var bytesReceived = parseInt(report.bytesReceived, 10) || -1;
 
         var rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
         if (rtt !== -1) {
@@ -536,11 +536,6 @@ var StatsGatherer = function (_EventEmitter) {
       var _this4 = this;
 
       this.connection.on('iceConnectionStateChange', function () {
-        // Not interested in receive only streams
-        if (_this4.connection.getLocalStreams().length === 0) {
-          return;
-        }
-
         var state = _this4.connection.iceConnectionState;
 
         if (state === 'connected' || state === 'completed') {
@@ -551,7 +546,7 @@ var StatsGatherer = function (_EventEmitter) {
           var statsPoll = function statsPoll() {
             _this4._gatherStats().then(function (reports) {
               var event = _this4._createStatsReport(reports, true);
-              if (event.tracks.length > 0) {
+              if (event.tracks.length > 0 || event.remoteTracks.length > 0) {
                 _this4.emit('stats', event);
               }
             });

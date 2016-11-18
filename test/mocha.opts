@@ -1,0 +1,6 @@
+--compilers js:babel-core/register
+--require chai
+--require sinon
+--ui bdd
+--colors
+test/test.js
