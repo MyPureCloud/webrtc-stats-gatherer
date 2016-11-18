@@ -9,7 +9,8 @@ if (typeof window === 'undefined') {
     },
     performance: {
       now: () => new Date().getTime()
-    }
+    },
+    location: { 'host': 'localhost', 'protocol': 'http' }
   };
 
   GLOBAL.window.setTimeout = setTimeout.bind(GLOBAL.window);
@@ -62,7 +63,7 @@ describe('StatsGatherer', function () {
   describe('_gatherStats', function () {
     it('should call into the native getstats method', function (done) {
       const gatherer = new StatsGatherer(rtcPeerConnection);
-      sinon.stub(gatherer.connection.pc.peerconnection, 'getStats', function () {
+      sinon.stub(gatherer.connection.pc.peerconnection, 'getStats', () => {
         done();
       });
       gatherer._gatherStats();

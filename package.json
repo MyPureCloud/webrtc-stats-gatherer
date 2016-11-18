@@ -6,12 +6,13 @@
   "scripts": {
     "lint": "semistandard",
     "build": "browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ es2015 ] ]",
-    "build:test": "babel test/test.js > test/testBuild.js",
     "prepublish": "npm run build && npm run _test",
-    "_test": "mocha test/test.js",
+    "_test": "_mocha",
     "test-server": "npm run _test -- -w",
     "test": "npm run lint && npm run _test",
-    "posttest": "gulp test:coverage"
+    "posttest": "npm run coverage && npm run check:coverage",
+    "coverage": "./scripts/genCoverage.sh",
+    "check:coverage": "./scripts/checkCoverage.sh"
   },
   "repository": {
     "type": "git",
@@ -34,17 +35,13 @@
     "babelify": "^7.3.0",
     "browserify": "^13.0.1",
     "chai": "^3.5.0",
-    "gulp": "^3.9.1",
-    "gulp-istanbul": "^1.1.1",
-    "gulp-mocha": "^3.0.1",
-    "isparta": "^4.0.0",
-    "istanbul": "^0.4.5",
+    "istanbul": "^1.0.0-alpha.2",
     "mocha": "^2.5.3",
     "pre-commit": "^1.1.3",
     "pre-push": "^0.1.1",
     "run-sequence": "^1.2.2",
     "semistandard": "^8.0.0",
-    "sinon": "^1.17.4"
+    "sinon": "^1.17.6"
   },
   "pre-push": [
     "test"
@@ -57,8 +54,7 @@
       "**/out/",
       "/lib/select2/",
       "/lib/ckeditor/",
-      "tmp.js",
-      "gulpfile.babel.js"
+      "tmp.js"
     ]
   }
 }
