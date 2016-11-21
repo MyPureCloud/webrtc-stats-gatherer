@@ -9,7 +9,8 @@ if (typeof window === 'undefined') {
     },
     performance: {
       now: () => new Date().getTime()
-    }
+    },
+    location: { 'host': 'localhost', 'protocol': 'http' }
   };
 
   GLOBAL.window.setTimeout = setTimeout.bind(GLOBAL.window);
@@ -19,7 +20,7 @@ if (typeof window === 'undefined') {
 
 import { assert } from 'chai';
 import sinon from 'sinon';
-import StatsGatherer from '../src/StatsGatherer';
+import StatsGatherer from '../out/stats-gatherer';
 import mockInitialStats from './mock-initial-stats.json';
 import mockStats1 from './mock-stats-1.json';
 import mockStats2 from './mock-stats-2.json';
@@ -62,7 +63,7 @@ describe('StatsGatherer', function () {
   describe('_gatherStats', function () {
     it('should call into the native getstats method', function (done) {
       const gatherer = new StatsGatherer(rtcPeerConnection);
-      sinon.stub(gatherer.connection.pc.peerconnection, 'getStats', function () {
+      sinon.stub(gatherer.connection.pc.peerconnection, 'getStats', () => {
         done();
       });
       gatherer._gatherStats();

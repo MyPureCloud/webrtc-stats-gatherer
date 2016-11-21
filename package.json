@@ -8,10 +8,13 @@
     "build": "browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ es2015 ] ]",
     "build:test": "babel test/test.js > test/testBuild.js",
     "prepublish": "npm run build && npm run _test",
-    "_test": "mocha test/test.js",
+    "_test": "_mocha",
     "test-server": "npm run _test -- -w",
-    "test": "npm run lint && npm run _test",
-    "posttest": "gulp test:coverage"
+    "test": "npm run lint && npm run build:test && npm run _test",
+    "posttest": "npm run coverage && npm run check:coverage",
+    "coverage": "./scripts/genCoverage.sh",
+    "check:coverage": "./scripts/checkCoverage.sh",
+    "gulp:coverage": "gulp test:coverage"
   },
   "repository": {
     "type": "git",
@@ -46,7 +49,7 @@
     "pre-push": "^0.1.1",
     "run-sequence": "^1.2.2",
     "semistandard": "^8.0.0",
-    "sinon": "^1.17.4"
+    "sinon": "^1.17.6"
   },
   "pre-push": [
     "test"
@@ -60,7 +63,8 @@
       "/lib/select2/",
       "/lib/ckeditor/",
       "tmp.js",
-      "gulpfile.babel.js"
+      "gulpfile.babel.js",
+      "test/testBuild.js"
     ]
   }
 }
