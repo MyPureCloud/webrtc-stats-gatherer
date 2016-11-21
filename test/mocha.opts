@@ -2,4 +2,5 @@
 --require sinon
 --ui bdd
 --colors
-test/testBuild.js
+--compilers js:babel-core/register
+test/test.js
