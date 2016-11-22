@@ -9,8 +9,7 @@ if (typeof window === 'undefined') {
     },
     performance: {
       now: () => new Date().getTime()
-    },
-    location: { 'host': 'localhost', 'protocol': 'http' }
+    }
   };
 
   GLOBAL.window.setTimeout = setTimeout.bind(GLOBAL.window);
