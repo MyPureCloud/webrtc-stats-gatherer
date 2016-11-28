@@ -14,6 +14,7 @@ class StatsGatherer extends EventEmitter {
 
     this.statsInterval = (opts.interval || 5) * 1000;
     this.lastResult = {};
+    this.lastActiveLocalCandidate = null;
 
     this._pollingInterval = null;
 
@@ -58,6 +59,33 @@ class StatsGatherer extends EventEmitter {
       const activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
 
       if (!activeSource) {
+        // if not active source, is this the active candidate pair?
+        const selected = (report.type === 'candidatepair' && report.selected);
+        const chromeSelected = (report.type === 'googCandidatePair' && report.googActiveConnection === 'true');
+        if (selected || chromeSelected) {
+          // this is the active candidate pair, check if it's the same id as last one
+          const localId = report.localCandidateId;
+          const remoteId = report.remoteCandidateId;
+          event.localCandidateChanged = !!this.lastActiveLocalCandidate && localId !== this.lastActiveLocalCandidate.id;
+          event.remoteCandidateChanged = !!this.lastActiveRemoteCandidate && remoteId !== this.lastActiveRemoteCandidate.id;
+          if (!this.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
+            Object.keys(results).forEach((key) => {
+              const report = results[key];
+              if (localId && report.type === 'localcandidate' && report.id === localId) {
+                this.lastActiveLocalCandidate = report;
+              }
+              if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+                this.lastActiveRemoteCandidate = report;
+              }
+            });
+          }
+          if (this.lastActiveLocalCandidate) {
+            event.networkType = this.lastActiveLocalCandidate.networkType;
+            if (this.lastActiveRemoteCandidate) {
+              event.candidatePair = this.lastActiveLocalCandidate.candidateType + ';' + this.lastActiveRemoteCandidate.candidateType;
+            }
+          }
+        }
         return;
       }
       const local = !!report.bytesSent;
@@ -163,6 +191,14 @@ class StatsGatherer extends EventEmitter {
         bytesSent,
         bytesReceived
       };
+
+      if (kind === 'audio') {
+        trackInfo.aecDivergentFilterFraction = parseInt(report.aecDivergentFilterFraction, 10) || 0;
+        trackInfo.googEchoCanellationEchoDelayMedian = parseInt(report.googEchoCanellationEchoDelayMedian, 10) || 0;
+        trackInfo.googEchoCancellationEchoDelayStdDev = parseInt(report.googEchoCancellationEchoDelayStdDev, 10) || 0;
+        trackInfo.googEchoCancellationReturnLoss = parseInt(report.googEchoCancellationReturnLoss, 10) || 0;
+        trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
+      }
 
       if (local) {
         event.tracks.push(trackInfo);
@@ -290,6 +326,9 @@ class StatsGatherer extends EventEmitter {
             if (selected || chromeSelected) {
               activeCandidatePair = report;
             }
+
+            event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
+            event.srtpCipher = event.srtpCipher || report.srtpCipher;
           });
 
           if (activeCandidatePair) {
@@ -331,6 +370,7 @@ class StatsGatherer extends EventEmitter {
 
                 const priority = parseInt(localCandidate.priority, 10);
                 event.turnType = turnTypes[priority >> 24];
+                event.networkType = localCandidate.networkType;
               }
 
               event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;

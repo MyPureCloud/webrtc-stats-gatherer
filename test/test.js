@@ -152,18 +152,29 @@ describe('StatsGatherer', function () {
         assert.deepEqual(report1.session, opts.session);
         assert.deepEqual(report1.conference, opts.conference);
         assert.equal(report1.tracks.length, 0);
+        assert.equal(report1.networkType, 'lan');
+        assert.equal(report1.localCandidateChanged, false);
+        assert.equal(report1.candidatePair, 'host;serverreflexive');
 
         assert.ok(report2);
         assert.equal(report2.name, 'getStats');
         assert.deepEqual(report2.session, opts.session);
         assert.deepEqual(report2.conference, opts.conference);
         assert.equal(report2.tracks.length, 2);
+        // report 2 has same candidates
+        assert.equal(report2.localCandidateChanged, false);
+        assert.equal(report2.networkType, 'lan');
+        assert.equal(report2.candidatePair, 'host;serverreflexive');
 
         assert.ok(report3);
         assert.equal(report3.name, 'getStats');
         assert.deepEqual(report3.session, opts.session);
         assert.deepEqual(report3.conference, opts.conference);
         assert.equal(report3.tracks.length, 0);
+        // report 3 has different candidates
+        assert.equal(report3.localCandidateChanged, true);
+        assert.equal(report3.networkType, 'wlan');
+        assert.equal(report3.candidatePair, 'serverreflexive;serverreflexive');
       });
 
       it('should accurately get track properties for the report', function () {
@@ -175,6 +186,11 @@ describe('StatsGatherer', function () {
         assert.equal(audioTrack.lost, 18);
         assert.equal(audioTrack.loss, 0);
         assert.equal(audioTrack.muted, false);
+        assert.equal(audioTrack.aecDivergentFilterFraction, 0);
+        assert.equal(audioTrack.googEchoCanellationEchoDelayMedian, 0);
+        assert.equal(audioTrack.googEchoCancellationEchoDelayStdDev, 0);
+        assert.equal(audioTrack.googEchoCancellationReturnLoss, -100);
+        assert.equal(audioTrack.googEchoCancellationReturnLossEnhancement, -100);
 
         const videoTrack = report2.tracks[1];
         assert.ok(videoTrack.track);
@@ -184,6 +200,13 @@ describe('StatsGatherer', function () {
         assert.equal(videoTrack.lost, 10000);
         assert.equal(videoTrack.loss, 8);
         assert.equal(videoTrack.muted, false);
+
+        // these don't exist for video
+        assert.equal(videoTrack.aecDivergentFilterFraction, undefined);
+        assert.equal(videoTrack.googEchoCanellationEchoDelayMedian, undefined);
+        assert.equal(videoTrack.googEchoCancellationEchoDelayStdDev, undefined);
+        assert.equal(videoTrack.googEchoCancellationReturnLoss, undefined);
+        assert.equal(videoTrack.googEchoCancellationReturnLossEnhancement, undefined);
       });
 
       it('should include remote tracks', function () {
@@ -287,6 +310,9 @@ describe('StatsGatherer', function () {
         assert.ok(stats.userAgent);
         assert.ok(stats.platform);
         assert.ok(stats.cores);
+        assert.ok(stats.networkType);
+        assert.ok(stats.dtlsCipher);
+        assert.ok(stats.srtpCipher);
         done();
       });
       gatherer.collectInitialConnectionStats();
