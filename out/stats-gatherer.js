@@ -342,6 +342,7 @@ var StatsGatherer = function (_EventEmitter) {
 
     _this.statsInterval = (opts.interval || 5) * 1000;
     _this.lastResult = {};
+    _this.lastActiveLocalCandidate = null;
 
     _this._pollingInterval = null;
 
@@ -392,6 +393,35 @@ var StatsGatherer = function (_EventEmitter) {
         var activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
 
         if (!activeSource) {
+          // if not active source, is this the active candidate pair?
+          var selected = report.type === 'candidatepair' && report.selected;
+          var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
+          if (selected || chromeSelected) {
+            (function () {
+              // this is the active candidate pair, check if it's the same id as last one
+              var localId = report.localCandidateId;
+              var remoteId = report.remoteCandidateId;
+              event.localCandidateChanged = !!_this2.lastActiveLocalCandidate && localId !== _this2.lastActiveLocalCandidate.id;
+              event.remoteCandidateChanged = !!_this2.lastActiveRemoteCandidate && remoteId !== _this2.lastActiveRemoteCandidate.id;
+              if (!_this2.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
+                Object.keys(results).forEach(function (key) {
+                  var report = results[key];
+                  if (localId && report.type === 'localcandidate' && report.id === localId) {
+                    _this2.lastActiveLocalCandidate = report;
+                  }
+                  if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+                    _this2.lastActiveRemoteCandidate = report;
+                  }
+                });
+              }
+              if (_this2.lastActiveLocalCandidate) {
+                event.networkType = _this2.lastActiveLocalCandidate.networkType;
+                if (_this2.lastActiveRemoteCandidate) {
+                  event.candidatePair = _this2.lastActiveLocalCandidate.candidateType + ';' + _this2.lastActiveRemoteCandidate.candidateType;
+                }
+              }
+            })();
+          }
           return;
         }
         var local = !!report.bytesSent;
@@ -498,6 +528,14 @@ var StatsGatherer = function (_EventEmitter) {
           bytesReceived: bytesReceived
         };
 
+        if (kind === 'audio') {
+          trackInfo.aecDivergentFilterFraction = parseInt(report.aecDivergentFilterFraction, 10) || 0;
+          trackInfo.googEchoCanellationEchoDelayMedian = parseInt(report.googEchoCanellationEchoDelayMedian, 10) || 0;
+          trackInfo.googEchoCancellationEchoDelayStdDev = parseInt(report.googEchoCancellationEchoDelayStdDev, 10) || 0;
+          trackInfo.googEchoCancellationReturnLoss = parseInt(report.googEchoCancellationReturnLoss, 10) || 0;
+          trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
+        }
+
         if (local) {
           event.tracks.push(trackInfo);
         } else {
@@ -595,7 +633,7 @@ var StatsGatherer = function (_EventEmitter) {
         }
 
         if (state === 'connected' || state === 'completed') {
-          var _ret = function () {
+          var _ret2 = function () {
             if (_this5._haveConnectionMetrics) {
               return {
                 v: void 0
@@ -638,6 +676,9 @@ var StatsGatherer = function (_EventEmitter) {
                 if (selected || chromeSelected) {
                   activeCandidatePair = report;
                 }
+
+                event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
+                event.srtpCipher = event.srtpCipher || report.srtpCipher;
               });
 
               if (activeCandidatePair) {
@@ -681,6 +722,7 @@ var StatsGatherer = function (_EventEmitter) {
 
                       var priority = parseInt(localCandidate.priority, 10);
                       event.turnType = turnTypes[priority >> 24];
+                      event.networkType = localCandidate.networkType;
                     }
 
                     event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
@@ -691,7 +733,7 @@ var StatsGatherer = function (_EventEmitter) {
             });
           }();
 
-          if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+          if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
         }
 
         if (state === 'failed') {
