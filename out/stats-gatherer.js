@@ -371,9 +371,200 @@ var StatsGatherer = function (_EventEmitter) {
       }
     }
   }, {
+    key: '_checkLastActiveCandidate',
+    value: function _checkLastActiveCandidate(_ref) {
+      var localId = _ref.localId,
+          remoteId = _ref.remoteId,
+          key = _ref.key,
+          report = _ref.report;
+
+      if (localId && report.type === 'localcandidate' && report.id === localId) {
+        this.lastActiveLocalCandidate = report;
+      }
+      if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+        this.lastActiveRemoteCandidate = report;
+      }
+    }
+  }, {
+    key: '_processReport',
+    value: function _processReport(_ref2) {
+      var _this2 = this;
+
+      var key = _ref2.key,
+          report = _ref2.report,
+          results = _ref2.results,
+          event = _ref2.event;
+
+      var now = new Date(report.timestamp);
+      var track = report.trackIdentifier || report.googTrackId || report.id;
+      var kind = report.mediaType;
+
+      var activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
+
+      if (!activeSource) {
+        // if not active source, is this the active candidate pair?
+        var selected = report.type === 'candidatepair' && report.selected;
+        var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
+
+        if (selected || chromeSelected) {
+          (function () {
+            // this is the active candidate pair, check if it's the same id as last one
+            var localId = report.localCandidateId;
+            var remoteId = report.remoteCandidateId;
+
+            event.localCandidateChanged = !!_this2.lastActiveLocalCandidate && localId !== _this2.lastActiveLocalCandidate.id;
+            event.remoteCandidateChanged = !!_this2.lastActiveRemoteCandidate && remoteId !== _this2.lastActiveRemoteCandidate.id;
+
+            if (!_this2.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
+              if (Array.isArray(results)) {
+                results.forEach(function (result) {
+                  _this2._checkLastActiveCandidate({
+                    localId: localId,
+                    remoteId: remoteId,
+                    key: result.key,
+                    value: result.value
+                  });
+                });
+              } else {
+                Object.keys(results).forEach(function (key) {
+                  var report = results[key];
+                  _this2._checkLastActiveCandidate({ localId: localId, remoteId: remoteId, key: key, report: report });
+                });
+              }
+            }
+
+            if (_this2.lastActiveLocalCandidate) {
+              event.networkType = _this2.lastActiveLocalCandidate.networkType;
+              if (_this2.lastActiveRemoteCandidate) {
+                event.candidatePair = _this2.lastActiveLocalCandidate.candidateType + ';' + _this2.lastActiveRemoteCandidate.candidateType;
+              }
+            }
+          })();
+        }
+        return;
+      }
+      var local = !!report.bytesSent;
+
+      if (!this.lastResult || !this.lastResult[report.id] || this.lastResult[report.id].timestamp >= now) {
+        return;
+      }
+
+      // Chrome does not provide a mediaType field, so we have to manually inspect
+      // the tracks to find the media type.
+      if (!kind) {
+        this.connection.getLocalStreams()[0].getTracks().forEach(function (track) {
+          if (track.id === report.googTrackId) {
+            kind = track.kind;
+          }
+        });
+      }
+
+      var muted = false;
+      // We still didn't find the media type, so the local track is muted
+      if (!kind) {
+        muted = true;
+        // Try to guess the media type from the codec
+        if (report.googCodecName) {
+          var codec = report.googCodecName.toLowerCase();
+          if (codec === 'vp8') {
+            kind = 'video';
+          } else if (codec === 'opus') {
+            kind = 'audio';
+          }
+        }
+      }
+
+      var bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
+      var lastResultReport = this.lastResult[report.id];
+      var previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
+      var deltaTime = now - new Date(lastResultReport.timestamp);
+      var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
+      var bytesSent = parseInt(report.bytesSent, 10) || -1;
+      var bytesReceived = parseInt(report.bytesReceived, 10) || -1;
+
+      var rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
+      if (rtt !== -1) {
+        event[kind + 'Rtt'] = rtt;
+      }
+
+      var jitter = parseInt(report.googJitterReceived || report.mozJitterReceived || report.jitter, 10) || -1;
+      if (jitter !== -1) {
+        event[kind + 'Jitter'] = jitter;
+      }
+
+      var lost = 0;
+      var previousLost = 0;
+      var total = 0;
+      var previousTotal = 0;
+      if (report.remoteId && results[report.remoteId]) {
+        lost = results[report.remoteId].packetsLost;
+        previousLost = lastResultReport.packetsLost;
+
+        if (lost < previousLost) {
+          this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
+          lost = previousLost;
+          results[report.remoteId].packetsLost = lost;
+        }
+      } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
+        if (report.packetsLost) {
+          lost = parseInt(report.packetsLost, 10) || 0;
+          previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
+
+          if (lost < previousLost) {
+            this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
+            lost = previousLost;
+            report.packetsLost = '' + lost;
+          }
+        }
+        if (local && report.packetsSent) {
+          total = parseInt(report.packetsSent, 10) || 0;
+          previousTotal = parseInt(lastResultReport.packetsSent, 10) || 0;
+        }
+        if (!local && report.packetsReceived) {
+          total = parseInt(report.packetsReceived, 10) || 0;
+          previousTotal = parseInt(lastResultReport.packetsReceived, 10) || 0;
+        }
+      }
+
+      var loss = 0;
+      if (total > 0) {
+        loss = Math.floor(lost / total * 100);
+      }
+
+      var intervalLoss = Math.floor((lost - previousLost) / (total - previousTotal) * 100) || 0;
+
+      // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
+      // and use only `loss` which is percentage loss
+      var trackInfo = {
+        track: track,
+        kind: kind,
+        bitrate: bitrate,
+        lost: lost,
+        muted: muted,
+        loss: loss,
+        intervalLoss: intervalLoss,
+        bytesSent: bytesSent,
+        bytesReceived: bytesReceived
+      };
+
+      if (kind === 'audio') {
+        trackInfo.aecDivergentFilterFraction = parseInt(report.aecDivergentFilterFraction, 10) || 0;
+        trackInfo.googEchoCanellationEchoDelayMedian = parseInt(report.googEchoCanellationEchoDelayMedian, 10) || 0;
+        trackInfo.googEchoCancellationEchoDelayStdDev = parseInt(report.googEchoCancellationEchoDelayStdDev, 10) || 0;
+        trackInfo.googEchoCancellationReturnLoss = parseInt(report.googEchoCancellationReturnLoss, 10) || 0;
+        trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
+      }
+
+      if (local) {
+        event.tracks.push(trackInfo);
+      } else {
+        event.remoteTracks.push(trackInfo);
+      }
+    }
+  }, {
     key: '_createStatsReport',
     value: function _createStatsReport(results, updateLastResult) {
-      var _this2 = this;
+      var _this3 = this;
 
       var event = {
         name: 'getStats',
@@ -384,164 +575,21 @@ var StatsGatherer = function (_EventEmitter) {
         remoteTracks: []
       };
 
-      Object.keys(results).forEach(function (key) {
-        var report = results[key];
-        var now = new Date(report.timestamp);
-        var track = report.trackIdentifier || report.googTrackId || report.id;
-        var kind = report.mediaType;
-
-        var activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
-
-        if (!activeSource) {
-          // if not active source, is this the active candidate pair?
-          var selected = report.type === 'candidatepair' && report.selected;
-          var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
-          if (selected || chromeSelected) {
-            (function () {
-              // this is the active candidate pair, check if it's the same id as last one
-              var localId = report.localCandidateId;
-              var remoteId = report.remoteCandidateId;
-              event.localCandidateChanged = !!_this2.lastActiveLocalCandidate && localId !== _this2.lastActiveLocalCandidate.id;
-              event.remoteCandidateChanged = !!_this2.lastActiveRemoteCandidate && remoteId !== _this2.lastActiveRemoteCandidate.id;
-              if (!_this2.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
-                Object.keys(results).forEach(function (key) {
-                  var report = results[key];
-                  if (localId && report.type === 'localcandidate' && report.id === localId) {
-                    _this2.lastActiveLocalCandidate = report;
-                  }
-                  if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
-                    _this2.lastActiveRemoteCandidate = report;
-                  }
-                });
-              }
-              if (_this2.lastActiveLocalCandidate) {
-                event.networkType = _this2.lastActiveLocalCandidate.networkType;
-                if (_this2.lastActiveRemoteCandidate) {
-                  event.candidatePair = _this2.lastActiveLocalCandidate.candidateType + ';' + _this2.lastActiveRemoteCandidate.candidateType;
-                }
-              }
-            })();
-          }
-          return;
-        }
-        var local = !!report.bytesSent;
-
-        if (!_this2.lastResult || !_this2.lastResult[report.id] || _this2.lastResult[report.id].timestamp >= now) {
-          return;
-        }
-
-        // Chrome does not provide a mediaType field, so we have to manually inspect
-        // the tracks to find the media type.
-        if (!kind) {
-          _this2.connection.getLocalStreams()[0].getTracks().forEach(function (track) {
-            if (track.id === report.googTrackId) {
-              kind = track.kind;
-            }
+      if (Array.isArray(results)) {
+        results.forEach(function (result) {
+          _this3._processReport({
+            key: result.key,
+            report: result.value,
+            results: results,
+            event: event
           });
-        }
-
-        var muted = false;
-        // We still didn't find the media type, so the local track is muted
-        if (!kind) {
-          muted = true;
-          // Try to guess the media type from the codec
-          if (report.googCodecName) {
-            var codec = report.googCodecName.toLowerCase();
-            if (codec === 'vp8') {
-              kind = 'video';
-            } else if (codec === 'opus') {
-              kind = 'audio';
-            }
-          }
-        }
-
-        var bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
-        var lastResultReport = _this2.lastResult[report.id];
-        var previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
-        var deltaTime = now - new Date(lastResultReport.timestamp);
-        var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
-        var bytesSent = parseInt(report.bytesSent, 10) || -1;
-        var bytesReceived = parseInt(report.bytesReceived, 10) || -1;
-
-        var rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
-        if (rtt !== -1) {
-          event[kind + 'Rtt'] = rtt;
-        }
-
-        var jitter = parseInt(report.googJitterReceived || report.mozJitterReceived || report.jitter, 10) || -1;
-        if (jitter !== -1) {
-          event[kind + 'Jitter'] = jitter;
-        }
-
-        var lost = 0;
-        var previousLost = 0;
-        var total = 0;
-        var previousTotal = 0;
-        if (report.remoteId && results[report.remoteId]) {
-          lost = results[report.remoteId].packetsLost;
-          previousLost = lastResultReport.packetsLost;
-
-          if (lost < previousLost) {
-            _this2.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
-            lost = previousLost;
-            results[report.remoteId].packetsLost = lost;
-          }
-        } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
-          if (report.packetsLost) {
-            lost = parseInt(report.packetsLost, 10) || 0;
-            previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
-
-            if (lost < previousLost) {
-              _this2.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
-              lost = previousLost;
-              report.packetsLost = '' + lost;
-            }
-          }
-          if (local && report.packetsSent) {
-            total = parseInt(report.packetsSent, 10) || 0;
-            previousTotal = parseInt(lastResultReport.packetsSent, 10) || 0;
-          }
-          if (!local && report.packetsReceived) {
-            total = parseInt(report.packetsReceived, 10) || 0;
-            previousTotal = parseInt(lastResultReport.packetsReceived, 10) || 0;
-          }
-        }
-
-        var loss = 0;
-        if (total > 0) {
-          loss = Math.floor(lost / total * 100);
-        }
-
-        var intervalLoss = Math.floor((lost - previousLost) / (total - previousTotal) * 100) || 0;
-
-        // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
-        // and use only `loss` which is percentage loss
-        var trackInfo = {
-          track: track,
-          kind: kind,
-          bitrate: bitrate,
-          lost: lost,
-          muted: muted,
-          loss: loss,
-          intervalLoss: intervalLoss,
-          bytesSent: bytesSent,
-          bytesReceived: bytesReceived
-        };
-
-        if (kind === 'audio') {
-          trackInfo.aecDivergentFilterFraction = parseInt(report.aecDivergentFilterFraction, 10) || 0;
-          trackInfo.googEchoCanellationEchoDelayMedian = parseInt(report.googEchoCanellationEchoDelayMedian, 10) || 0;
-          trackInfo.googEchoCancellationEchoDelayStdDev = parseInt(report.googEchoCancellationEchoDelayStdDev, 10) || 0;
-          trackInfo.googEchoCancellationReturnLoss = parseInt(report.googEchoCancellationReturnLoss, 10) || 0;
-          trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
-        }
-
-        if (local) {
-          event.tracks.push(trackInfo);
-        } else {
-          event.remoteTracks.push(trackInfo);
-        }
-      });
+        });
+      } else {
+        Object.keys(results).forEach(function (key) {
+          var report = results[key];
+          _this3._processReport({ key: key, report: report, results: results, event: event });
+        });
+      }
 
       if (updateLastResult) {
         this.lastResult = results;
@@ -552,68 +600,68 @@ var StatsGatherer = function (_EventEmitter) {
   }, {
     key: 'collectTraces',
     value: function collectTraces() {
-      var _this3 = this;
+      var _this4 = this;
 
       this.connection.on('PeerConnectionTrace', function (data) {
-        _this3.traceData.push(data);
+        _this4.traceData.push(data);
       });
 
       this.connection.on('error', function () {
-        _this3.emit('traces', {
+        _this4.emit('traces', {
           name: 'trace',
-          session: _this3.session,
-          initiator: _this3.initiator,
-          conference: _this3.conference,
-          traces: _this3.traceData
+          session: _this4.session,
+          initiator: _this4.initiator,
+          conference: _this4.conference,
+          traces: _this4.traceData
         });
       });
     }
   }, {
     key: 'collectStats',
     value: function collectStats() {
-      var _this4 = this;
+      var _this5 = this;
 
       this.connection.on('iceConnectionStateChange', function () {
-        var state = _this4.connection.iceConnectionState;
+        var state = _this5.connection.iceConnectionState;
 
         if (state === 'connected' || state === 'completed') {
-          if (_this4._pollingInterval !== null) {
+          if (_this5._pollingInterval !== null) {
             return;
           }
 
           var statsPoll = function statsPoll() {
-            _this4._gatherStats().then(function (reports) {
-              var event = _this4._createStatsReport(reports, true);
+            _this5._gatherStats().then(function (reports) {
+              var event = _this5._createStatsReport(reports, true);
               if (event.tracks.length > 0 || event.remoteTracks.length > 0) {
-                _this4.emit('stats', event);
+                _this5.emit('stats', event);
               }
             });
           };
 
           if (IS_BROWSER) {
             window.setTimeout(statsPoll, 0);
-            _this4._pollingInterval = window.setInterval(statsPoll, _this4.statsInterval);
+            _this5._pollingInterval = window.setInterval(statsPoll, _this5.statsInterval);
           }
         }
 
         if (state === 'disconnected') {
-          if (_this4.connection.signalingState !== 'stable') {
+          if (_this5.connection.signalingState !== 'stable') {
             return;
           }
 
-          _this4._gatherStats().then(function (reports) {
-            var event = _this4._createStatsReport(reports);
+          _this5._gatherStats().then(function (reports) {
+            var event = _this5._createStatsReport(reports);
             event.type = 'iceDisconnected';
-            _this4.emit('stats', event);
+            _this5.emit('stats', event);
           });
         }
 
         if (state === 'closed') {
-          if (_this4._pollingInterval) {
+          if (_this5._pollingInterval) {
             if (IS_BROWSER) {
-              window.clearInterval(_this4._pollingInterval);
+              window.clearInterval(_this5._pollingInterval);
             }
-            _this4._pollingInterval = null;
+            _this5._pollingInterval = null;
           }
         }
       });
@@ -621,50 +669,50 @@ var StatsGatherer = function (_EventEmitter) {
   }, {
     key: 'collectInitialConnectionStats',
     value: function collectInitialConnectionStats() {
-      var _this5 = this;
+      var _this6 = this;
 
       this.connection.on('iceConnectionStateChange', function () {
-        var state = _this5.connection.iceConnectionState;
+        var state = _this6.connection.iceConnectionState;
 
         if (state === 'checking') {
           if (IS_BROWSER) {
-            _this5._iceStartTime = window.performance.now();
+            _this6._iceStartTime = window.performance.now();
           }
         }
 
         if (state === 'connected' || state === 'completed') {
           var _ret2 = function () {
-            if (_this5._haveConnectionMetrics) {
+            if (_this6._haveConnectionMetrics) {
               return {
                 v: void 0
               };
             }
 
-            _this5._haveConnectionMetrics = true;
+            _this6._haveConnectionMetrics = true;
             var userAgent = void 0,
                 platform = void 0,
                 cores = void 0;
             if (IS_BROWSER) {
-              _this5._iceConnectionTime = window.performance.now() - _this5._iceStartTime;
+              _this6._iceConnectionTime = window.performance.now() - _this6._iceStartTime;
               userAgent = window.navigator.userAgent;
               platform = window.navigator.platform;
               cores = window.navigator.hardwareConcurrency;
             }
 
-            _this5._gatherStats().then(function (reports) {
+            _this6._gatherStats().then(function (reports) {
               var event = {
                 name: 'connect',
                 userAgent: userAgent,
                 platform: platform,
                 cores: cores,
-                session: _this5.session,
-                initiator: _this5.initiator,
-                conference: _this5.conference,
-                connectTime: _this5._iceConnectionTime,
-                hadLocalIPv6Candidate: _this5.connection.hadLocalIPv6Candidate,
-                hadRemoteIPv6Candidate: _this5.connection.hadRemoteIPv6Candidate,
-                hadLocalRelayCandidate: _this5.connection.hadLocalRelayCandidate,
-                hadRemoteRelayCandidate: _this5.connection.hadremoteRelayCandidate
+                session: _this6.session,
+                initiator: _this6.initiator,
+                conference: _this6.conference,
+                connectTime: _this6._iceConnectionTime,
+                hadLocalIPv6Candidate: _this6.connection.hadLocalIPv6Candidate,
+                hadRemoteIPv6Candidate: _this6.connection.hadRemoteIPv6Candidate,
+                hadLocalRelayCandidate: _this6.connection.hadLocalRelayCandidate,
+                hadRemoteRelayCandidate: _this6.connection.hadremoteRelayCandidate
               };
 
               var activeCandidatePair = null;
@@ -729,7 +777,7 @@ var StatsGatherer = function (_EventEmitter) {
                   }
                 })();
               }
-              _this5.emit('stats', event);
+              _this6.emit('stats', event);
             });
           }();
 
@@ -738,15 +786,15 @@ var StatsGatherer = function (_EventEmitter) {
 
         if (state === 'failed') {
           if (IS_BROWSER) {
-            _this5._iceFailedTime = window.performance.now() - _this5._iceStartTime;
+            _this6._iceFailedTime = window.performance.now() - _this6._iceStartTime;
           }
-          _this5._gatherStats().then(function (reports) {
+          _this6._gatherStats().then(function (reports) {
             var event = {
               name: 'failure',
-              session: _this5.session,
-              initiator: _this5.initiator,
-              conference: _this5.conference,
-              failTime: _this5._iceFailureTime,
+              session: _this6.session,
+              initiator: _this6.initiator,
+              conference: _this6.conference,
+              failTime: _this6._iceFailureTime,
               iceRW: 0,
               numLocalHostCandidates: 0,
               numLocalSrflxCandidates: 0,
@@ -766,10 +814,10 @@ var StatsGatherer = function (_EventEmitter) {
               }
             });
 
-            var localCandidates = _this5.connection.pc.localDescription.sdp.split('\r\n').filter(function (line) {
+            var localCandidates = _this6.connection.pc.localDescription.sdp.split('\r\n').filter(function (line) {
               return line.indexOf('a=candidate:') > -1;
             });
-            var remoteCandidates = _this5.connection.pc.remoteDescription.sdp.split('\r\n').filter(function (line) {
+            var remoteCandidates = _this6.connection.pc.remoteDescription.sdp.split('\r\n').filter(function (line) {
               return line.indexOf('a=candidate:') > -1;
             });
 
@@ -782,13 +830,13 @@ var StatsGatherer = function (_EventEmitter) {
               }).length;
             });
 
-            _this5.emit('stats', event);
-            _this5.emit('traces', {
+            _this6.emit('stats', event);
+            _this6.emit('traces', {
               name: 'trace',
-              session: _this5.session,
-              initiator: _this5.initiator,
-              conference: _this5.conference,
-              traces: _this5.traceData
+              session: _this6.session,
+              initiator: _this6.initiator,
+              conference: _this6.conference,
+              traces: _this6.traceData
             });
           });
         }
