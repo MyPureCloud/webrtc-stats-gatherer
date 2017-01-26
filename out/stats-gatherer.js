@@ -359,13 +359,28 @@ var StatsGatherer = function (_EventEmitter) {
   }
 
   _createClass(StatsGatherer, [{
+    key: '_polyFillStats',
+    value: function _polyFillStats(results) {
+      if (!results || Array.isArray(results)) {
+        return results;
+      }
+      var betterResults = [];
+      Object.keys(results).forEach(function (key) {
+        betterResults.push({
+          key: key,
+          value: results[key]
+        });
+      });
+      return betterResults;
+    }
+  }, {
     key: '_gatherStats',
     value: function _gatherStats() {
       try {
         if (this.connection.pc.peerconnection) {
-          return this.connection.pc.peerconnection.getStats(null);
+          return this.connection.pc.peerconnection.getStats().then(this._polyFillStats);
         }
-        return this.connection.pc.getStats(null);
+        return this.connection.pc.getStats().then(this._polyFillStats);
       } catch (e) {
         this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect connection.pc.peerconnection.getStats}', this.connection);
       }
@@ -396,7 +411,7 @@ var StatsGatherer = function (_EventEmitter) {
           event = _ref2.event;
 
       var now = new Date(report.timestamp);
-      var track = report.trackIdentifier || report.googTrackId || report.id;
+      var track = report.trackIdentifier || report.googTrackId || key;
       var kind = report.mediaType;
 
       var activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
@@ -416,21 +431,14 @@ var StatsGatherer = function (_EventEmitter) {
             event.remoteCandidateChanged = !!_this2.lastActiveRemoteCandidate && remoteId !== _this2.lastActiveRemoteCandidate.id;
 
             if (!_this2.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
-              if (Array.isArray(results)) {
-                results.forEach(function (result) {
-                  _this2._checkLastActiveCandidate({
-                    localId: localId,
-                    remoteId: remoteId,
-                    key: result.key,
-                    value: result.value
-                  });
+              results.forEach(function (result) {
+                _this2._checkLastActiveCandidate({
+                  localId: localId,
+                  remoteId: remoteId,
+                  key: result.key,
+                  report: result.value
                 });
-              } else {
-                Object.keys(results).forEach(function (key) {
-                  var report = results[key];
-                  _this2._checkLastActiveCandidate({ localId: localId, remoteId: remoteId, key: key, report: report });
-                });
-              }
+              });
             }
 
             if (_this2.lastActiveLocalCandidate) {
@@ -443,9 +451,18 @@ var StatsGatherer = function (_EventEmitter) {
         }
         return;
       }
+
       var local = !!report.bytesSent;
 
-      if (!this.lastResult || !this.lastResult[report.id] || this.lastResult[report.id].timestamp >= now) {
+      var lastResultReport = void 0;
+      if (!this.lastResult) {
+        return;
+      }
+      lastResultReport = this.lastResult.find && this.lastResult.find(function (r) {
+        return r.key === key;
+      });
+      lastResultReport = lastResultReport && lastResultReport.value;
+      if (!lastResultReport || lastResultReport.timestamp >= now) {
         return;
       }
 
@@ -475,7 +492,6 @@ var StatsGatherer = function (_EventEmitter) {
       }
 
       var bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
-      var lastResultReport = this.lastResult[report.id];
       var previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
       var deltaTime = now - new Date(lastResultReport.timestamp);
       var bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
@@ -496,14 +512,19 @@ var StatsGatherer = function (_EventEmitter) {
       var previousLost = 0;
       var total = 0;
       var previousTotal = 0;
-      if (report.remoteId && results[report.remoteId]) {
-        lost = results[report.remoteId].packetsLost;
+      var remoteItem = void 0;
+
+      remoteItem = results.find(function (r) {
+        return r.key === report.remoteId;
+      });
+      if (report.remoteId && remoteItem) {
+        lost = remoteItem.packetsLost;
         previousLost = lastResultReport.packetsLost;
 
         if (lost < previousLost) {
           this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', { lost: lost, previousLost: previousLost });
           lost = previousLost;
-          results[report.remoteId].packetsLost = lost;
+          remoteItem.packetsLost = lost;
         }
       } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
         if (report.packetsLost) {
@@ -575,21 +596,16 @@ var StatsGatherer = function (_EventEmitter) {
         remoteTracks: []
       };
 
-      if (Array.isArray(results)) {
-        results.forEach(function (result) {
-          _this3._processReport({
-            key: result.key,
-            report: result.value,
-            results: results,
-            event: event
-          });
+      results = this._polyFillStats(results);
+
+      results.forEach(function (result) {
+        _this3._processReport({
+          key: result.key,
+          report: result.value,
+          results: results,
+          event: event
         });
-      } else {
-        Object.keys(results).forEach(function (key) {
-          var report = results[key];
-          _this3._processReport({ key: key, report: report, results: results, event: event });
-        });
-      }
+      });
 
       if (updateLastResult) {
         this.lastResult = results;
