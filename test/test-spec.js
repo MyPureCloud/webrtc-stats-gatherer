@@ -22,9 +22,9 @@ import { assert } from 'chai';
 import sinon from 'sinon';
 import StatsGatherer from '../src/StatsGatherer';
 import mockInitialStats from './mock-initial-stats.json';
-import mockStats1 from './mock-stats-1.json';
-import mockStats2 from './mock-stats-2.json';
-import mockStats3 from './mock-stats-3.json';
+import mockStats1 from './mock-stats-1-spec.json';
+import mockStats2 from './mock-stats-2-spec.json';
+import mockStats3 from './mock-stats-3-spec.json';
 import mockSdp from './mock-sdp.json';
 import { EventEmitter } from 'events';
 
@@ -83,8 +83,9 @@ describe('StatsGatherer', function () {
 
     describe('intervalLoss', function () {
       it('should generate intervalLoss', function () {
-        const stats1 = {
-          'ssrc_2422518318_recv': {
+        const stats1 = [{
+          key: 'ssrc_2422518318_recv',
+          value: {
             'id': 'ssrc_2422518318_recv',
             'timestamp': '2016-06-17T12:22:21.374Z',
             'type': 'ssrc',
@@ -97,10 +98,11 @@ describe('StatsGatherer', function () {
             'googCodecName': 'opus',
             'bytesReceived': '0'
           }
-        };
+        }];
 
-        const stats2 = {
-          'ssrc_2422518318_recv': {
+        const stats2 = [{
+          key: 'ssrc_2422518318_recv',
+          value: {
             'id': 'ssrc_2422518318_recv',
             'timestamp': '2016-06-17T12:22:21.374Z',
             'type': 'ssrc',
@@ -113,10 +115,11 @@ describe('StatsGatherer', function () {
             'googCodecName': 'opus',
             'bytesReceived': '0'
           }
-        };
+        }];
 
-        const stats3 = {
-          'ssrc_2422518318_recv': {
+        const stats3 = [{
+          key: 'ssrc_2422518318_recv',
+          value: {
             'id': 'ssrc_2422518318_recv',
             'timestamp': '2016-06-17T12:22:21.374Z',
             'type': 'ssrc',
@@ -129,7 +132,7 @@ describe('StatsGatherer', function () {
             'googCodecName': 'opus',
             'bytesReceived': '0'
           }
-        };
+        }];
 
         report1 = gatherer._createStatsReport(stats1, true);
         report2 = gatherer._createStatsReport(stats2, true);
