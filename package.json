@@ -12,7 +12,8 @@
     "test": "npm run lint && npm run _test",
     "posttest": "npm run coverage && npm run check:coverage",
     "coverage": "./scripts/genCoverage.sh",
-    "check:coverage": "./scripts/checkCoverage.sh"
+    "check:coverage": "./scripts/checkCoverage.sh",
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,7 @@
     "babelify": "^7.3.0",
     "browserify": "^14.0.0",
     "chai": "^3.5.0",
+    "coveralls": "^2.11.16",
     "istanbul": "^1.0.0-alpha.2",
     "mocha": "^3.2.0",
     "pre-commit": "^1.1.3",
