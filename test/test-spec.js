@@ -1,5 +1,15 @@
 /* global describe, it, beforeEach, afterEach */
 
+import { assert } from 'chai';
+import sinon from 'sinon';
+import StatsGatherer from '../src/StatsGatherer';
+import mockInitialStats from './mock-initial-stats.json';
+import mockStats1 from './mock-stats-1-spec.json';
+import mockStats2 from './mock-stats-2-spec.json';
+import mockStats3 from './mock-stats-3-spec.json';
+import mockSdp from './mock-sdp.json';
+import { EventEmitter } from 'events';
+
 if (typeof window === 'undefined') {
   GLOBAL.window = {
     navigator: {
@@ -17,16 +27,6 @@ if (typeof window === 'undefined') {
   GLOBAL.window.setInterval = setInterval.bind(GLOBAL.window);
   GLOBAL.window.clearInterval = clearInterval.bind(GLOBAL.window);
 }
-
-import { assert } from 'chai';
-import sinon from 'sinon';
-import StatsGatherer from '../src/StatsGatherer';
-import mockInitialStats from './mock-initial-stats.json';
-import mockStats1 from './mock-stats-1-spec.json';
-import mockStats2 from './mock-stats-2-spec.json';
-import mockStats3 from './mock-stats-3-spec.json';
-import mockSdp from './mock-sdp.json';
-import { EventEmitter } from 'events';
 
 class MockRtcPeerConnection extends EventEmitter {
   constructor () {
