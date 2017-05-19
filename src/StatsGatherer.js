@@ -46,9 +46,9 @@ class StatsGatherer extends EventEmitter {
   _gatherStats () {
     try {
       if (this.connection.pc.peerconnection) {
-        return this.connection.pc.peerconnection.getStats().then(this._polyFillStats);
+        return this.connection.pc.peerconnection.getStats(null).then(this._polyFillStats);
       }
-      return this.connection.pc.getStats().then(this._polyFillStats);
+      return this.connection.pc.getStats(null).then(this._polyFillStats);
     } catch (e) {
       this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect connection.pc.peerconnection.getStats}', this.connection);
     }
@@ -222,6 +222,10 @@ class StatsGatherer extends EventEmitter {
       trackInfo.googEchoCancellationEchoDelayStdDev = parseInt(report.googEchoCancellationEchoDelayStdDev, 10) || 0;
       trackInfo.googEchoCancellationReturnLoss = parseInt(report.googEchoCancellationReturnLoss, 10) || 0;
       trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
+    }
+
+    if (kind === 'audio' && report.audioInputLevel) {
+      trackInfo.audioInputLevel = parseInt(report.audioInputLevel, 10) || 0;
     }
 
     if (local) {

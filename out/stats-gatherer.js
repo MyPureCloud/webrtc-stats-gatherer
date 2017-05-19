@@ -309,6 +309,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _events = require('events');
@@ -376,9 +378,9 @@ var StatsGatherer = function (_EventEmitter) {
     value: function _gatherStats() {
       try {
         if (this.connection.pc.peerconnection) {
-          return this.connection.pc.peerconnection.getStats().then(this._polyFillStats);
+          return this.connection.pc.peerconnection.getStats(null).then(this._polyFillStats);
         }
-        return this.connection.pc.getStats().then(this._polyFillStats);
+        return this.connection.pc.getStats(null).then(this._polyFillStats);
       } catch (e) {
         this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect connection.pc.peerconnection.getStats}', this.connection);
       }
@@ -420,30 +422,32 @@ var StatsGatherer = function (_EventEmitter) {
         var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
 
         if (selected || chromeSelected) {
-          // this is the active candidate pair, check if it's the same id as last one
-          var localId = report.localCandidateId;
-          var remoteId = report.remoteCandidateId;
+          (function () {
+            // this is the active candidate pair, check if it's the same id as last one
+            var localId = report.localCandidateId;
+            var remoteId = report.remoteCandidateId;
 
-          event.localCandidateChanged = !!this.lastActiveLocalCandidate && localId !== this.lastActiveLocalCandidate.id;
-          event.remoteCandidateChanged = !!this.lastActiveRemoteCandidate && remoteId !== this.lastActiveRemoteCandidate.id;
+            event.localCandidateChanged = !!_this2.lastActiveLocalCandidate && localId !== _this2.lastActiveLocalCandidate.id;
+            event.remoteCandidateChanged = !!_this2.lastActiveRemoteCandidate && remoteId !== _this2.lastActiveRemoteCandidate.id;
 
-          if (!this.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
-            results.forEach(function (result) {
-              _this2._checkLastActiveCandidate({
-                localId: localId,
-                remoteId: remoteId,
-                key: result.key,
-                report: result.value
+            if (!_this2.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
+              results.forEach(function (result) {
+                _this2._checkLastActiveCandidate({
+                  localId: localId,
+                  remoteId: remoteId,
+                  key: result.key,
+                  report: result.value
+                });
               });
-            });
-          }
-
-          if (this.lastActiveLocalCandidate) {
-            event.networkType = this.lastActiveLocalCandidate.networkType;
-            if (this.lastActiveRemoteCandidate) {
-              event.candidatePair = this.lastActiveLocalCandidate.candidateType + ';' + this.lastActiveRemoteCandidate.candidateType;
             }
-          }
+
+            if (_this2.lastActiveLocalCandidate) {
+              event.networkType = _this2.lastActiveLocalCandidate.networkType;
+              if (_this2.lastActiveRemoteCandidate) {
+                event.candidatePair = _this2.lastActiveLocalCandidate.candidateType + ';' + _this2.lastActiveRemoteCandidate.candidateType;
+              }
+            }
+          })();
         }
         return;
       }
@@ -572,6 +576,10 @@ var StatsGatherer = function (_EventEmitter) {
         trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
       }
 
+      if (kind === 'audio' && report.audioInputLevel) {
+        trackInfo.audioInputLevel = parseInt(report.audioInputLevel, 10) || 0;
+      }
+
       if (local) {
         event.tracks.push(trackInfo);
       } else {
@@ -693,99 +701,107 @@ var StatsGatherer = function (_EventEmitter) {
         }
 
         if (state === 'connected' || state === 'completed') {
-          if (_this6._haveConnectionMetrics) {
-            return;
-          }
+          var _ret2 = function () {
+            if (_this6._haveConnectionMetrics) {
+              return {
+                v: void 0
+              };
+            }
 
-          _this6._haveConnectionMetrics = true;
-          var userAgent = void 0,
-              platform = void 0,
-              cores = void 0;
-          if (IS_BROWSER) {
-            _this6._iceConnectionTime = window.performance.now() - _this6._iceStartTime;
-            userAgent = window.navigator.userAgent;
-            platform = window.navigator.platform;
-            cores = window.navigator.hardwareConcurrency;
-          }
+            _this6._haveConnectionMetrics = true;
+            var userAgent = void 0,
+                platform = void 0,
+                cores = void 0;
+            if (IS_BROWSER) {
+              _this6._iceConnectionTime = window.performance.now() - _this6._iceStartTime;
+              userAgent = window.navigator.userAgent;
+              platform = window.navigator.platform;
+              cores = window.navigator.hardwareConcurrency;
+            }
 
-          _this6._gatherStats().then(function (reports) {
-            var event = {
-              name: 'connect',
-              userAgent: userAgent,
-              platform: platform,
-              cores: cores,
-              session: _this6.session,
-              initiator: _this6.initiator,
-              conference: _this6.conference,
-              connectTime: _this6._iceConnectionTime,
-              hadLocalIPv6Candidate: _this6.connection.hadLocalIPv6Candidate,
-              hadRemoteIPv6Candidate: _this6.connection.hadRemoteIPv6Candidate,
-              hadLocalRelayCandidate: _this6.connection.hadLocalRelayCandidate,
-              hadRemoteRelayCandidate: _this6.connection.hadremoteRelayCandidate
-            };
+            _this6._gatherStats().then(function (reports) {
+              var event = {
+                name: 'connect',
+                userAgent: userAgent,
+                platform: platform,
+                cores: cores,
+                session: _this6.session,
+                initiator: _this6.initiator,
+                conference: _this6.conference,
+                connectTime: _this6._iceConnectionTime,
+                hadLocalIPv6Candidate: _this6.connection.hadLocalIPv6Candidate,
+                hadRemoteIPv6Candidate: _this6.connection.hadRemoteIPv6Candidate,
+                hadLocalRelayCandidate: _this6.connection.hadLocalRelayCandidate,
+                hadRemoteRelayCandidate: _this6.connection.hadremoteRelayCandidate
+              };
 
-            var activeCandidatePair = null;
-            Object.keys(reports).forEach(function (key) {
-              var report = reports[key];
-
-              var selected = report.type === 'candidatepair' && report.selected;
-              var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
-              if (selected || chromeSelected) {
-                activeCandidatePair = report;
-              }
-
-              event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
-              event.srtpCipher = event.srtpCipher || report.srtpCipher;
-            });
-
-            if (activeCandidatePair) {
-              var localId = activeCandidatePair.localCandidateId;
-              var remoteId = activeCandidatePair.remoteCandidateId;
-              var localCandidate = void 0,
-                  remoteCandidate = void 0;
-
+              var activeCandidatePair = null;
               Object.keys(reports).forEach(function (key) {
                 var report = reports[key];
-                if (localId && report.type === 'localcandidate' && report.id === localId) {
-                  localCandidate = report;
-                  event.localCandidateType = report.candidateType;
+
+                var selected = report.type === 'candidatepair' && report.selected;
+                var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
+                if (selected || chromeSelected) {
+                  activeCandidatePair = report;
                 }
 
-                if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
-                  remoteCandidate = report;
-                  event.remoteCandidateType = report.candidateType;
-                }
+                event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
+                event.srtpCipher = event.srtpCipher || report.srtpCipher;
               });
 
-              if (localCandidate && remoteCandidate) {
-                event.candidatePair = localCandidate.candidateType + ';' + remoteCandidate.candidateType;
-                event.candidatePairDetails = {
-                  local: localCandidate,
-                  remote: remoteCandidate
-                };
+              if (activeCandidatePair) {
+                (function () {
+                  var localId = activeCandidatePair.localCandidateId;
+                  var remoteId = activeCandidatePair.remoteCandidateId;
+                  var localCandidate = void 0,
+                      remoteCandidate = void 0;
+
+                  Object.keys(reports).forEach(function (key) {
+                    var report = reports[key];
+                    if (localId && report.type === 'localcandidate' && report.id === localId) {
+                      localCandidate = report;
+                      event.localCandidateType = report.candidateType;
+                    }
+
+                    if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+                      remoteCandidate = report;
+                      event.remoteCandidateType = report.candidateType;
+                    }
+                  });
+
+                  if (localCandidate && remoteCandidate) {
+                    event.candidatePair = localCandidate.candidateType + ';' + remoteCandidate.candidateType;
+                    event.candidatePairDetails = {
+                      local: localCandidate,
+                      remote: remoteCandidate
+                    };
+                  }
+
+                  if (localCandidate) {
+                    event.transport = localCandidate.transport;
+                    if (localCandidate.priority) {
+                      // Chrome-specific mapping;
+                      // but only chrome has priority set on the candidate currently.
+                      var turnTypes = {
+                        2: 'udp',
+                        1: 'tcp',
+                        0: 'tls'
+                      };
+
+                      var priority = parseInt(localCandidate.priority, 10);
+                      event.turnType = turnTypes[priority >> 24];
+                      event.networkType = localCandidate.networkType;
+                    }
+
+                    event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
+                  }
+                })();
               }
+              _this6.emit('stats', event);
+            });
+          }();
 
-              if (localCandidate) {
-                event.transport = localCandidate.transport;
-                if (localCandidate.priority) {
-                  // Chrome-specific mapping;
-                  // but only chrome has priority set on the candidate currently.
-                  var turnTypes = {
-                    2: 'udp',
-                    1: 'tcp',
-                    0: 'tls'
-                  };
-
-                  var priority = parseInt(localCandidate.priority, 10);
-                  event.turnType = turnTypes[priority >> 24];
-                  event.networkType = localCandidate.networkType;
-                }
-
-                event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
-              }
-            }
-            _this6.emit('stats', event);
-          });
+          if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
         }
 
         if (state === 'failed') {
