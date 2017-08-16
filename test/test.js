@@ -63,7 +63,7 @@ describe('StatsGatherer', function () {
   describe('_gatherStats', function () {
     it('should call into the native getstats method', function (done) {
       const gatherer = new StatsGatherer(rtcPeerConnection);
-      sinon.stub(gatherer.connection.pc.peerconnection, 'getStats', () => {
+      sinon.stub(gatherer.connection.pc.peerconnection, 'getStats').callsFake(() => {
         done();
       });
       gatherer._gatherStats();
