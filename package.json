@@ -43,7 +43,7 @@
     "pre-push": "^0.1.1",
     "run-sequence": "^2.0.0",
     "semistandard": "^11.0.0",
-    "sinon": "^3.0.0"
+    "sinon": "^4.0.0"
   },
   "pre-push": [
     "test"
