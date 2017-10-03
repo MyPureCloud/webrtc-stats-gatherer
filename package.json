@@ -36,7 +36,7 @@
     "babelify": "^7.3.0",
     "browserify": "^14.0.0",
     "chai": "^4.0.2",
-    "coveralls": "^2.11.16",
+    "coveralls": "^3.0.0",
     "istanbul": "^1.0.0-alpha.2",
     "mocha": "^4.0.0",
     "pre-commit": "^1.1.3",
