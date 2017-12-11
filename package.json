@@ -15,6 +15,9 @@
     "check:coverage": "./scripts/checkCoverage.sh",
     "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
+  "browserify": {
+    "transform": ["babelify"]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mypurecloud/webrtc-stats-gatherer.git"
