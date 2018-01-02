@@ -11,7 +11,7 @@ import mockSdp from './mock-sdp.json';
 import { EventEmitter } from 'events';
 
 if (typeof window === 'undefined') {
-  GLOBAL.window = {
+  global.window = {
     navigator: {
       userAgent: 'user-agent',
       hardwareConcurrency: 8,
@@ -23,9 +23,9 @@ if (typeof window === 'undefined') {
     location: { 'host': 'localhost', 'protocol': 'http' }
   };
 
-  GLOBAL.window.setTimeout = setTimeout.bind(GLOBAL.window);
-  GLOBAL.window.setInterval = setInterval.bind(GLOBAL.window);
-  GLOBAL.window.clearInterval = clearInterval.bind(GLOBAL.window);
+  global.window.setTimeout = setTimeout.bind(global.window);
+  global.window.setInterval = setInterval.bind(global.window);
+  global.window.clearInterval = clearInterval.bind(global.window);
 }
 
 class MockRtcPeerConnection extends EventEmitter {
