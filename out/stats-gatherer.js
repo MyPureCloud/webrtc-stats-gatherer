@@ -751,9 +751,11 @@ var StatsGatherer = function (_EventEmitter) {
             };
 
             var activeCandidatePair = null;
-            Object.keys(reports).forEach(function (key) {
-              var report = reports[key];
+            reports.forEach(function (_ref3) {
+              var key = _ref3.key,
+                  value = _ref3.value;
 
+              var report = value;
               var selected = report.type === 'candidatepair' && report.selected;
               var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
               if (selected || chromeSelected) {
@@ -770,8 +772,11 @@ var StatsGatherer = function (_EventEmitter) {
               var localCandidate = void 0,
                   remoteCandidate = void 0;
 
-              Object.keys(reports).forEach(function (key) {
-                var report = reports[key];
+              reports.forEach(function (_ref4) {
+                var key = _ref4.key,
+                    value = _ref4.value;
+
+                var report = value;
                 if (localId && report.type === 'localcandidate' && report.id === localId) {
                   localCandidate = report;
                   event.localCandidateType = report.candidateType;
@@ -834,9 +839,11 @@ var StatsGatherer = function (_EventEmitter) {
               numRemoteRelayCandidates: 0
             };
 
-            Object.keys(reports).forEach(function (key) {
-              var report = reports[key];
+            reports.forEach(function (_ref5) {
+              var key = _ref5.key,
+                  value = _ref5.value;
 
+              var report = value;
               if (report.type === 'googCandidatePair') {
                 if (report.googWritable === 'true' && report.googReadable === 'true') {
                   event.iceRW++;
