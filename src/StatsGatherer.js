@@ -51,6 +51,7 @@ class StatsGatherer extends EventEmitter {
       return this.connection.pc.getStats(null).then(this._polyFillStats);
     } catch (e) {
       this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect connection.pc.peerconnection.getStats}', this.connection);
+      return Promise.reject(e);
     }
   }
 
