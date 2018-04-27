@@ -767,8 +767,9 @@ var StatsGatherer = function (_EventEmitter) {
 
               var report = value;
               var selected = report.type === 'candidatepair' && report.selected;
+              var specSepected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
               var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
-              if (selected || chromeSelected) {
+              if (selected || chromeSelected || specSepected) {
                 activeCandidatePair = report;
               }
 

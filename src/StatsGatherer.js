@@ -380,8 +380,9 @@ class StatsGatherer extends EventEmitter {
           reports.forEach(function ({ key, value }) {
             const report = value;
             const selected = (report.type === 'candidatepair' && report.selected);
+            const specSepected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
             const chromeSelected = (report.type === 'googCandidatePair' && report.googActiveConnection === 'true');
-            if (selected || chromeSelected) {
+            if (selected || chromeSelected || specSepected) {
               activeCandidatePair = report;
             }
 
