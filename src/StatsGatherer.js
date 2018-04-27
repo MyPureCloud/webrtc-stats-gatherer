@@ -34,12 +34,21 @@ class StatsGatherer extends EventEmitter {
       return results;
     }
     const betterResults = [];
-    Object.keys(results).forEach(key => {
-      betterResults.push({
-        key,
-        value: results[key]
+    if (typeof window.RTCStatsReport !== 'undefined' && results instanceof window.RTCStatsReport) {
+      results.forEach((value, key) => {
+        betterResults.push({ key, value });
       });
-    });
+    } else if (Object.keys(results).length > 0) {
+      Object.keys(results).forEach(key => {
+        betterResults.push({
+          key,
+          value: results[key]
+        });
+      });
+    } else {
+      this.logger.warn('Unknown stats results format, returning unmodified', results);
+      return results;
+    }
     return betterResults;
   }
 
