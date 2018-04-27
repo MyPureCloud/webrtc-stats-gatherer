@@ -83,9 +83,10 @@ class StatsGatherer extends EventEmitter {
     if (!activeSource) {
       // if not active source, is this the active candidate pair?
       const selected = (report.type === 'candidatepair' && report.selected);
+      const specSepected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
       const chromeSelected = (report.type === 'googCandidatePair' && report.googActiveConnection === 'true');
 
-      if (selected || chromeSelected) {
+      if (selected || chromeSelected || specSepected) {
         // this is the active candidate pair, check if it's the same id as last one
         const localId = report.localCandidateId;
         const remoteId = report.remoteCandidateId;

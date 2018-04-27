@@ -449,9 +449,10 @@ var StatsGatherer = function (_EventEmitter) {
       if (!activeSource) {
         // if not active source, is this the active candidate pair?
         var selected = report.type === 'candidatepair' && report.selected;
+        var specSepected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
         var chromeSelected = report.type === 'googCandidatePair' && report.googActiveConnection === 'true';
 
-        if (selected || chromeSelected) {
+        if (selected || chromeSelected || specSepected) {
           // this is the active candidate pair, check if it's the same id as last one
           var localId = report.localCandidateId;
           var remoteId = report.remoteCandidateId;
