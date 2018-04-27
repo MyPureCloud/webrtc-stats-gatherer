@@ -397,7 +397,10 @@ class StatsGatherer extends EventEmitter {
           });
 
           if (!activeCandidatePair && activeCandidatePairId) {
-            activeCandidatePair = reports.find(r => r.value.id === activeCandidatePairId);
+            const report = reports.find(r => r.value.id === activeCandidatePairId);
+            if (report) {
+              activeCandidatePair = report.value;
+            }
           }
 
           if (activeCandidatePair) {

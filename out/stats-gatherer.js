@@ -784,9 +784,12 @@ var StatsGatherer = function (_EventEmitter) {
             });
 
             if (!activeCandidatePair && activeCandidatePairId) {
-              activeCandidatePair = reports.find(function (r) {
+              var report = reports.find(function (r) {
                 return r.value.id === activeCandidatePairId;
               });
+              if (report) {
+                activeCandidatePair = report.value;
+              }
             }
 
             if (activeCandidatePair) {
