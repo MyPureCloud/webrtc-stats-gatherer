@@ -398,12 +398,12 @@ class StatsGatherer extends EventEmitter {
 
             reports.forEach(function ({ key, value }) {
               const report = value;
-              if (localId && report.type === 'localcandidate' && report.id === localId) {
+              if (localId && (report.type === 'localcandidate' || report.type === 'local-candidate') && report.id === localId) {
                 localCandidate = report;
                 event.localCandidateType = report.candidateType;
               }
 
-              if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+              if (remoteId && (report.type === 'remotecandidate' || report.type === 'remote-candidate') && report.id === remoteId) {
                 remoteCandidate = report;
                 event.remoteCandidateType = report.candidateType;
               }
