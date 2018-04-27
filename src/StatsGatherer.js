@@ -378,6 +378,7 @@ class StatsGatherer extends EventEmitter {
           };
 
           let activeCandidatePair = null;
+          let activeCandidatePairId;
           reports.forEach(function ({ key, value }) {
             const report = value;
             const selected = (report.type === 'candidatepair' && report.selected);
@@ -387,9 +388,17 @@ class StatsGatherer extends EventEmitter {
               activeCandidatePair = report;
             }
 
+            if (report.selectedCandidatePairId) {
+              activeCandidatePairId = report.selectedCandidatePairId;
+            }
+
             event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
             event.srtpCipher = event.srtpCipher || report.srtpCipher;
           });
+
+          if (!activeCandidatePair && activeCandidatePairId) {
+            activeCandidatePair = reports.find(r => r.value.id === activeCandidatePairId);
+          }
 
           if (activeCandidatePair) {
             const localId = activeCandidatePair.localCandidateId;

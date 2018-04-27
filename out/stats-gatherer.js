@@ -762,6 +762,7 @@ var StatsGatherer = function (_EventEmitter) {
             };
 
             var activeCandidatePair = null;
+            var activeCandidatePairId = void 0;
             reports.forEach(function (_ref3) {
               var key = _ref3.key,
                   value = _ref3.value;
@@ -774,9 +775,19 @@ var StatsGatherer = function (_EventEmitter) {
                 activeCandidatePair = report;
               }
 
+              if (report.selectedCandidatePairId) {
+                activeCandidatePairId = report.selectedCandidatePairId;
+              }
+
               event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
               event.srtpCipher = event.srtpCipher || report.srtpCipher;
             });
+
+            if (!activeCandidatePair && activeCandidatePairId) {
+              activeCandidatePair = reports.find(function (r) {
+                return r.value.id === activeCandidatePairId;
+              });
+            }
 
             if (activeCandidatePair) {
               var localId = activeCandidatePair.localCandidateId;
