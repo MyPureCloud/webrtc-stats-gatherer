@@ -809,7 +809,7 @@ var StatsGatherer = function (_EventEmitter) {
               }
 
               if (localCandidate) {
-                event.transport = localCandidate.transport;
+                event.transport = localCandidate.transport || localCandidate.protocol;
                 if (localCandidate.priority) {
                   // Chrome-specific mapping;
                   // but only chrome has priority set on the candidate currently.
