@@ -1,8 +1,8 @@
 {
   "name": "webrtc-stats-gatherer",
-  "version": "5.0.2",
+  "version": "6.0.0",
   "description": "Gathers stats on interval for webrtc peer connection",
-  "main": "src/StatsGatherer.js",
+  "main": "out/stats-gatherer.js",
   "scripts": {
     "lint": "semistandard",
     "build": "browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ env ] ]",
