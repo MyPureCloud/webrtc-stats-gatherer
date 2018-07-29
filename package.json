@@ -2,10 +2,14 @@
   "name": "webrtc-stats-gatherer",
   "version": "6.0.0",
   "description": "Gathers stats on interval for webrtc peer connection",
-  "main": "out/stats-gatherer.js",
+  "main": "dist/stats-gatherer.js",
+  "files": [
+    "src",
+    "dist"
+  ],
   "scripts": {
     "lint": "semistandard",
-    "build": "browserify src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ env ] ]",
+    "build": " src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ env ] ]",
     "prepublish": "npm run build && npm run _test",
     "_test": "_mocha",
     "test-server": "npm run _test -- -w",
@@ -37,9 +41,8 @@
   "devDependencies": {
     "babel-cli": "^6.18.0",
     "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
-    "babelify": "^8.0.0",
-    "browserify": "^16.1.0",
     "chai": "^4.0.2",
     "coveralls": "^3.0.0",
     "istanbul": "^1.0.0-alpha.2",
@@ -48,7 +51,9 @@
     "pre-push": "^0.1.1",
     "run-sequence": "^2.0.0",
     "semistandard": "^12.0.0",
-    "sinon": "^6.0.0"
+    "sinon": "^6.0.0",
+    "webpack": "^4.16.3",
+    "webpack-cli": "^3.1.0"
   },
   "pre-push": [
     "test"

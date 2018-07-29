@@ -511,4 +511,4 @@ class StatsGatherer extends EventEmitter {
   }
 }
 
-export default StatsGatherer;
+module.exports = StatsGatherer;
