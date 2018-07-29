@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "lint": "semistandard",
-    "build": " src/StatsGatherer.js -s StatsGatherer -o out/stats-gatherer.js -t [ babelify --presets [ env ] ]",
+    "build": "webpack --env=prod --progress --profile --colors",
     "prepublish": "npm run build && npm run _test",
     "_test": "_mocha",
     "test-server": "npm run _test -- -w",
