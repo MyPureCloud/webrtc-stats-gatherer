@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "lint": "semistandard",
-    "build": "webpack --env=prod --progress --profile --colors",
+    "build": "npx webpack --env=prod --progress --profile --colors",
     "prepublish": "npm run build && npm run _test",
     "_test": "_mocha",
     "test-server": "npm run _test -- -w",
