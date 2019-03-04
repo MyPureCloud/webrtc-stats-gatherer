@@ -2,14 +2,17 @@
   "name": "webrtc-stats-gatherer",
   "version": "6.0.4",
   "description": "Gathers stats on interval for webrtc peer connection",
-  "main": "dist/webrtc-stats-gatherer.js",
+  "main": "dist/streaming-client.min.cjs",
+  "browser": "dist/streaming-client.js",
   "files": [
     "src",
     "dist"
   ],
   "scripts": {
     "lint": "semistandard",
-    "build": "npx webpack --env=prod --progress --profile --colors",
+    "build": "npm run build-web && npm run build-node",
+    "build-web": "webpack && webpack --env.production",
+    "build-node": "webpack --env.node && webpack --env.node --env.production",
     "prepublish": "npm run build && npm run _test",
     "_test": "_mocha",
     "test-server": "npm run _test -- -w",
