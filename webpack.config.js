@@ -21,7 +21,7 @@ module.exports = (env) => {
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename,
-      library: 'webrtc-troubleshooter',
+      library: 'WebrtcStatsGatherer',
       libraryTarget: 'umd'
     },
     plugins: [
