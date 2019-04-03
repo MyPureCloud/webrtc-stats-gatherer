@@ -66,5 +66,8 @@
       "/lib/ckeditor/",
       "tmp.js"
     ]
+  },
+  "dependencies": {
+    "wildemitter": "^1.2.0"
   }
 }

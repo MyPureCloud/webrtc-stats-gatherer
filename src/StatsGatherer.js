@@ -1,8 +1,8 @@
-import { EventEmitter } from 'events';
+import WildEmitter from 'wildemitter';
 
 let IS_BROWSER;
 
-class StatsGatherer extends EventEmitter {
+class StatsGatherer extends WildEmitter {
   constructor (peerConnection, opts = {}) {
     IS_BROWSER = typeof window !== 'undefined';
     super();
