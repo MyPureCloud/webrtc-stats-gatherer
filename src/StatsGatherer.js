@@ -244,7 +244,7 @@ class StatsGatherer extends WildEmitter {
       });
     });
 
-    const candidatePair = results.find(r => r.value.type === 'candidate-pair' && r.value.state === 'succeeded');
+    const candidatePair = results.find(r => r.value.type === 'candidate-pair' && r.value.state === 'succeeded' && r.value.nominated === true);
     if (candidatePair) {
       this._processSelectedCandidatePair({ report: candidatePair.value, event, results });
     }
