@@ -19,8 +19,7 @@ webappPipeline {
     cmConfig = {
         return [
             managerEmail: 'purecloud-client-media@genesys.com',
-            rollbackPlan: 'Patch version with fix',
-            testResults: 'https://jenkins.ininica.com/job/valve-webrtcstatsgatherer-tests-test/'
+            rollbackPlan: 'Patch version with fix'
         ]
     }
 
