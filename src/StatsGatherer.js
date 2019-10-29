@@ -13,7 +13,7 @@ class StatsGatherer extends WildEmitter {
     this.conference = opts.conference;
 
     this.statsInterval = (opts.interval || 5) * 1000;
-    this.lastResult = {};
+    this.lastResult = null;
     this.lastActiveLocalCandidate = null;
 
     this._pollingInterval = null;
@@ -65,181 +65,157 @@ class StatsGatherer extends WildEmitter {
   }
 
   _checkLastActiveCandidate ({ localId, remoteId, key, report }) {
-    if (localId && report.type === 'localcandidate' && report.id === localId) {
+    if (localId && report.type === 'local-candidate' && report.id === localId) {
       this.lastActiveLocalCandidate = report;
     }
-    if (remoteId && report.type === 'remotecandidate' && report.id === remoteId) {
+    if (remoteId && report.type === 'remote-candidate' && report.id === remoteId) {
       this.lastActiveRemoteCandidate = report;
     }
   }
 
-  _processReport ({ key, report, results, event }) {
-    const now = new Date(report.timestamp);
-    const track = report.trackIdentifier || report.googTrackId || key;
-    let kind = report.mediaType;
+  _processSelectedCandidatePair ({ report, event, results }) {
+    // this is the active candidate pair, check if it's the same id as last one
+    const localId = report.localCandidateId;
+    const remoteId = report.remoteCandidateId;
 
-    const activeSource = !!(report.type === 'ssrc' && (report.bytesSent || report.bytesReceived));
+    event.localCandidateChanged = !!this.lastActiveLocalCandidate && localId !== this.lastActiveLocalCandidate.id;
+    event.remoteCandidateChanged = !!this.lastActiveRemoteCandidate && remoteId !== this.lastActiveRemoteCandidate.id;
 
-    if (!activeSource) {
-      // if not active source, is this the active candidate pair?
-      const selected = (report.type === 'candidatepair' && report.selected);
-      const specSepected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
-      const chromeSelected = (report.type === 'googCandidatePair' && report.googActiveConnection === 'true');
-
-      if (selected || chromeSelected || specSepected) {
-        // this is the active candidate pair, check if it's the same id as last one
-        const localId = report.localCandidateId;
-        const remoteId = report.remoteCandidateId;
-
-        event.localCandidateChanged = !!this.lastActiveLocalCandidate && localId !== this.lastActiveLocalCandidate.id;
-        event.remoteCandidateChanged = !!this.lastActiveRemoteCandidate && remoteId !== this.lastActiveRemoteCandidate.id;
-
-        if (!this.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
-          results.forEach(result => {
-            this._checkLastActiveCandidate({
-              localId,
-              remoteId,
-              key: result.key,
-              report: result.value
-            });
-          });
-        }
-
-        if (this.lastActiveLocalCandidate) {
-          event.networkType = this.lastActiveLocalCandidate.networkType;
-          if (this.lastActiveRemoteCandidate) {
-            event.candidatePair = this.lastActiveLocalCandidate.candidateType + ';' + this.lastActiveRemoteCandidate.candidateType;
-          }
-        }
-      }
-      return;
-    }
-
-    const local = !!report.bytesSent;
-
-    let lastResultReport;
-    if (!this.lastResult) {
-      return;
-    }
-    lastResultReport = this.lastResult.find && this.lastResult.find(r => r.key === key);
-    lastResultReport = lastResultReport && lastResultReport.value;
-    if (!lastResultReport || lastResultReport.timestamp >= now) {
-      return;
-    }
-
-    // Chrome does not provide a mediaType field, so we have to manually inspect
-    // the tracks to find the media type.
-    if (!kind) {
-      this.connection.getLocalStreams()[0].getTracks().forEach(function (track) {
-        if (track.id === report.googTrackId) {
-          kind = track.kind;
-        }
+    if (!this.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
+      results.forEach(result => {
+        this._checkLastActiveCandidate({
+          localId,
+          remoteId,
+          key: result.key,
+          report: result.value
+        });
       });
     }
 
-    let muted = false;
-    // We still didn't find the media type, so the local track is muted
-    if (!kind) {
-      muted = true;
-      // Try to guess the media type from the codec
-      if (report.googCodecName) {
-        const codec = report.googCodecName.toLowerCase();
-        if (codec === 'vp8') {
-          kind = 'video';
-        } else if (codec === 'opus') {
-          kind = 'audio';
-        }
+    if (this.lastActiveLocalCandidate) {
+      event.networkType = this.lastActiveLocalCandidate.networkType;
+      if (this.lastActiveRemoteCandidate) {
+        event.candidatePair = this.lastActiveLocalCandidate.candidateType + ';' + this.lastActiveRemoteCandidate.candidateType;
       }
     }
 
-    const bytes = parseInt(local ? report.bytesSent : report.bytesReceived, 10) || 0;
-    const previousBytesTotal = parseInt(local ? lastResultReport.bytesSent : lastResultReport.bytesReceived, 10) || 0;
-    const deltaTime = now - new Date(lastResultReport.timestamp);
-    const bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
-    const bytesSent = parseInt(report.bytesSent, 10) || -1;
-    const bytesReceived = parseInt(report.bytesReceived, 10) || -1;
+    event.bytesSent = report.bytesSent;
+    event.bytesReceived = report.bytesReceived;
+    event.requestsReceived = report.requestsReceived;
+    event.requestsSent = report.requestsSent;
+    event.responsesReceived = report.responsesReceived;
+    event.responsesSent = report.responsesSent;
+    event.consentRequestsSent = report.consentRequestsSent;
+    event.totalRoundTripTime = report.totalRoundTripTime;
+  }
 
-    const rtt = parseInt(report.googRtt || report.mozRtt || report.roundTripTime, 10) || -1;
-    if (rtt !== -1) {
-      event[`${kind}Rtt`] = rtt;
+  _processSource ({ source, results, event }) {
+    const now = new Date(source.timestamp);
+
+    let lastResultSource, lastResultRemoteSource;
+
+    lastResultSource = this.lastResult && this.lastResult.find(r => r.key === source.id);
+    lastResultSource = lastResultSource && lastResultSource.value;
+    if (lastResultSource) {
+      lastResultRemoteSource = this.lastResult && this.lastResult.find(r => r.value.localId === lastResultSource.id);
+      lastResultRemoteSource = lastResultRemoteSource && lastResultRemoteSource.value;
     }
 
-    const jitter = parseInt(report.googJitterReceived || report.mozJitterReceived || report.jitter, 10) || -1;
-    if (jitter !== -1) {
-      event[`${kind}Jitter`] = jitter;
+    // for outbound-rtp, the correspondingRemoteSource will be remote-inbound-rtp
+    // for inbound-rtp, the correspondingRemoteSource will be remote-outbound-rtp
+    let correspondingRemoteSource, transport, candidatePair, track, mediaSource, codec;
+    results.forEach(r => {
+      if (r.value.localId === source.id) {
+        correspondingRemoteSource = r.value;
+      } else if (r.key === source.transportId) {
+        transport = r.value;
+      } else if (r.key === source.trackId) {
+        track = r.value;
+      } else if (r.key === source.mediaSourceId) {
+        mediaSource = r.value;
+      } else if (r.key === source.codecId) {
+        codec = r.value;
+      }
+    });
+    if (transport) {
+      candidatePair = results.find(r => r.key === transport.selectedCandidatePairId);
+      candidatePair = candidatePair && candidatePair.value;
     }
 
-    let lost = 0;
-    let previousLost = 0;
-    let total = 0;
-    let previousTotal = 0;
-    let remoteItem;
+    if (candidatePair) {
+      event.candidatePairHadActiveSource = true;
+    }
 
-    remoteItem = results.find(r => r.key === report.remoteId);
-    if (report.remoteId && remoteItem) {
-      lost = remoteItem.packetsLost;
-      previousLost = lastResultReport.packetsLost;
+    const kind = source.kind || source.mediaType;
+    const isOutbound = source.type === 'outbound-rtp';
 
-      if (lost < previousLost) {
-        this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
-        lost = previousLost;
-        remoteItem.packetsLost = lost;
-      }
-    } else if (report.packetsLost || report.packetsSent || report.packetsReceived) {
-      if (report.packetsLost) {
-        lost = parseInt(report.packetsLost, 10) || 0;
-        previousLost = parseInt(lastResultReport.packetsLost, 10) || 0;
+    const bytes = parseInt(isOutbound ? source.bytesSent : source.bytesReceived, 10) || 0;
+    let bitrate;
+    if (lastResultSource) {
+      const previousBytesTotal = parseInt(isOutbound ? lastResultSource.bytesSent : lastResultSource.bytesReceived, 10) || 0;
+      const deltaTime = now - new Date(lastResultSource.timestamp);
+      bitrate = Math.floor(8 * (bytes - previousBytesTotal) / deltaTime);
+    }
 
-        if (lost < previousLost) {
-          this.logger.warn('Possible stats bug: current lost should not be less than previousLost. Overriding current lost with previousLost.', {lost, previousLost});
-          lost = previousLost;
-          report.packetsLost = `${lost}`;
-        }
-      }
-      if (local && report.packetsSent) {
-        total = parseInt(report.packetsSent, 10) || 0;
-        previousTotal = parseInt(lastResultReport.packetsSent, 10) || 0;
-      }
-      if (!local && report.packetsReceived) {
-        total = parseInt(report.packetsReceived, 10) || 0;
-        previousTotal = parseInt(lastResultReport.packetsReceived, 10) || 0;
+    let roundTripTime, jitter, packetsLost, packetsSent, packetLoss;
+    if (correspondingRemoteSource) {
+      roundTripTime = correspondingRemoteSource.roundTripTime;
+      jitter = correspondingRemoteSource.jitter;
+      packetsLost = correspondingRemoteSource.packetsLost;
+      packetsSent = source.packetsSent;
+      packetLoss = packetsLost / packetsSent * 100;
+    }
+
+    let intervalPacketLoss, intervalPacketsSent, intervalPacketsLost;
+    if (lastResultRemoteSource) {
+      const previousPacketsSent = lastResultSource.packetsSent;
+      const previousPacketsLost = lastResultRemoteSource.packetsLost;
+      intervalPacketsSent = packetsSent - previousPacketsSent;
+      intervalPacketsLost = packetsLost - previousPacketsLost;
+      intervalPacketLoss = intervalPacketsLost / intervalPacketsSent * 100;
+    }
+
+    let echoReturnLoss, echoReturnLossEnhancement, audioLevel, totalAudioEnergy;
+    if (track && kind === 'audio') {
+      if (track.remoteSource) {
+        audioLevel = track.audioLevel;
+        totalAudioEnergy = track.totalAudioEnergy;
+      } else {
+        echoReturnLoss = track.echoReturnLoss;
+        echoReturnLossEnhancement = track.echoReturnLossEnhancement;
       }
     }
 
-    let loss = 0;
-    if (total > 0) {
-      loss = Math.floor((lost / total) * 100);
+    if (kind === 'audio' && mediaSource && (!track || !track.remoteSource)) {
+      audioLevel = mediaSource.audioLevel;
+      totalAudioEnergy = mediaSource.totalAudioEnergy;
     }
 
-    const intervalLoss = Math.floor((lost - previousLost) / (total - previousTotal) * 100) || 0;
+    let codecLabel;
+    if (codec) {
+      codecLabel = `${codec.payloadType} ${codec.mimeType} ${codec.clockRate}`;
+    }
 
-    // TODO: for 2.0 - remove `lost` which is an integer of packets lost,
-    // and use only `loss` which is percentage loss
     const trackInfo = {
-      track,
+      track: track && track.trackIdentifier,
       kind,
       bitrate,
-      lost,
-      muted,
-      loss,
-      intervalLoss,
-      bytesSent,
-      bytesReceived
+      roundTripTime,
+      bytes,
+      jitter,
+      packetLoss,
+      intervalPacketLoss,
+      echoReturnLoss,
+      echoReturnLossEnhancement,
+      audioLevel,
+      totalAudioEnergy,
+      codec: codecLabel
     };
 
-    if (kind === 'audio') {
-      trackInfo.aecDivergentFilterFraction = parseInt(report.aecDivergentFilterFraction, 10) || 0;
-      trackInfo.googEchoCanellationEchoDelayMedian = parseInt(report.googEchoCanellationEchoDelayMedian, 10) || 0;
-      trackInfo.googEchoCancellationEchoDelayStdDev = parseInt(report.googEchoCancellationEchoDelayStdDev, 10) || 0;
-      trackInfo.googEchoCancellationReturnLoss = parseInt(report.googEchoCancellationReturnLoss, 10) || 0;
-      trackInfo.googEchoCancellationReturnLossEnhancement = parseInt(report.googEchoCancellationReturnLossEnhancement, 10) || 0;
-    }
+    // remove undefined properties
+    Object.keys(trackInfo).forEach(key => trackInfo[key] === undefined && delete trackInfo[key]);
 
-    if (kind === 'audio' && report.audioInputLevel) {
-      trackInfo.audioInputLevel = parseInt(report.audioInputLevel, 10) || 0;
-    }
-
-    if (local) {
+    if (isOutbound) {
       event.tracks.push(trackInfo);
     } else {
       event.remoteTracks.push(trackInfo);
@@ -258,14 +234,20 @@ class StatsGatherer extends WildEmitter {
 
     results = this._polyFillStats(results);
 
-    results.forEach(result => {
-      this._processReport({
-        key: result.key,
-        report: result.value,
-        results,
-        event
+    const sources = results.filter(r => ['inbound-rtp', 'outbound-rtp'].indexOf(r.value.type) > -1);
+
+    sources.forEach(source => {
+      this._processSource({
+        source: source.value,
+        event,
+        results
       });
     });
+
+    const candidatePair = results.find(r => r.value.type === 'candidate-pair' && r.value.state === 'succeeded' && r.value.nominated === true);
+    if (candidatePair) {
+      this._processSelectedCandidatePair({ report: candidatePair.value, event, results });
+    }
 
     if (updateLastResult) {
       this.lastResult = results;
@@ -379,27 +361,23 @@ class StatsGatherer extends WildEmitter {
 
           let activeCandidatePair = null;
           let activeCandidatePairId;
-          reports.forEach(function ({ key, value }) {
+          reports.forEach(function ({ value }) {
             const report = value;
-            const selected = (report.type === 'candidatepair' && report.selected);
-            const specSepected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
-            const chromeSelected = (report.type === 'googCandidatePair' && report.googActiveConnection === 'true');
-            if (selected || chromeSelected || specSepected) {
+            const selected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
+
+            if (selected) {
               activeCandidatePair = report;
             }
 
             if (report.selectedCandidatePairId) {
               activeCandidatePairId = report.selectedCandidatePairId;
             }
-
-            event.dtlsCipher = event.dtlsCipher || report.dtlsCipher;
-            event.srtpCipher = event.srtpCipher || report.srtpCipher;
           });
 
           if (!activeCandidatePair && activeCandidatePairId) {
-            const report = reports.find(r => r.value.id === activeCandidatePairId);
-            if (report) {
-              activeCandidatePair = report.value;
+            const activeCandidatePair_ = reports.find(r => r.id === activeCandidatePairId);
+            if (activeCandidatePair_) {
+              activeCandidatePair = activeCandidatePair_.value;
             }
           }
 
@@ -410,12 +388,12 @@ class StatsGatherer extends WildEmitter {
 
             reports.forEach(function ({ key, value }) {
               const report = value;
-              if (localId && (report.type === 'localcandidate' || report.type === 'local-candidate') && report.id === localId) {
+              if (localId && report.type === 'local-candidate' && report.id === localId) {
                 localCandidate = report;
                 event.localCandidateType = report.candidateType;
               }
 
-              if (remoteId && (report.type === 'remotecandidate' || report.type === 'remote-candidate') && report.id === remoteId) {
+              if (remoteId && report.type === 'remote-candidate' && report.id === remoteId) {
                 remoteCandidate = report;
                 event.remoteCandidateType = report.candidateType;
               }
@@ -425,7 +403,8 @@ class StatsGatherer extends WildEmitter {
               event.candidatePair = localCandidate.candidateType + ';' + remoteCandidate.candidateType;
               event.candidatePairDetails = {
                 local: localCandidate,
-                remote: remoteCandidate
+                remote: remoteCandidate,
+                pair: activeCandidatePair
               };
             }
 
@@ -471,15 +450,6 @@ class StatsGatherer extends WildEmitter {
             numRemoteSrflxCandidates: 0,
             numRemoteRelayCandidates: 0
           };
-
-          reports.forEach(function ({ key, value }) {
-            const report = value;
-            if (report.type === 'googCandidatePair') {
-              if (report.googWritable === 'true' && report.googReadable === 'true') {
-                event.iceRW++;
-              }
-            }
-          });
 
           const localCandidates = this.connection.pc.localDescription.sdp.split('\r\n').filter(function (line) {
             return line.indexOf('a=candidate:') > -1;

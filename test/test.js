@@ -3,14 +3,12 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 import StatsGatherer from '../src/StatsGatherer';
-import mockInitialStats from './mock-initial-stats.json';
-import mockStats1 from './mock-stats-1.json';
-import mockStats2 from './mock-stats-2.json';
-import mockStats3 from './mock-stats-3.json';
-import mockInitialStatsSpec from './mock-initial-stats-spec.json';
-import mockStats1Spec from './mock-stats-1-spec.json';
-import mockStats2Spec from './mock-stats-2-spec.json';
-import mockStats3Spec from './mock-stats-3-spec.json';
+
+import mockSpecStatsInitial from './mock-spec-stats-initial.json';
+import mockSpecStats1 from './mock-spec-stats-1.json';
+import mockSpecStats2 from './mock-spec-stats-2.json';
+import mockSpecStats3 from './mock-spec-stats-3.json';
+import mockStatsRecvOnly from './mock-spec-stats-recvonly.json';
 import mockSdp from './mock-sdp.json';
 import { EventEmitter } from 'events';
 
@@ -46,8 +44,9 @@ describe('StatsGatherer', function () {
   let rtcPeerConnection;
 
   const suites = [
-    [mockInitialStats, mockStats1, mockStats2, mockStats3],
-    [mockInitialStatsSpec, mockStats1Spec, mockStats2Spec, mockStats3Spec]
+    // [mockInitialStats, mockStats1, mockStats2, mockStats3],
+    // [mockInitialStatsSpec, mockStats1Spec, mockStats2Spec, mockStats3Spec],
+    [mockSpecStatsInitial, mockSpecStats1, mockSpecStats2, mockSpecStats3]
   ];
 
   suites.forEach(function ([mockInitialStats, mockStats1, mockStats2, mockStats3]) {
@@ -93,60 +92,81 @@ describe('StatsGatherer', function () {
 
       describe('intervalLoss', function () {
         it('should generate intervalLoss', function () {
-          const stats1 = {
-            'ssrc_2422518318_recv': {
-              'id': 'ssrc_2422518318_recv',
-              'timestamp': '2016-06-17T12:22:21.374Z',
-              'type': 'ssrc',
-              'packetsLost': '0',
-              'packetsReceived': '0',
-              'ssrc': '2422518318',
-              'googTrackId': 'c25d5324-45ef-4653-8444-25b468afa76b',
-              'transportId': 'Channel-video-1',
-              'mediaType': 'audio',
-              'googCodecName': 'opus',
-              'bytesReceived': '0'
+          const stats1 = [{
+            'key': 'RTCRemoteInboundRtpAudioStream_545464236',
+            'value': {
+              'id': 'RTCRemoteInboundRtpAudioStream_545464236',
+              'timestamp': 1571687960465.791,
+              'type': 'remote-inbound-rtp',
+              'ssrc': 545464236,
+              'kind': 'audio',
+              'transportId': 'RTCTransport_audio_1',
+              'codecId': 'RTCCodec_audio_Outbound_111',
+              'packetsLost': 1,
+              'jitter': 0.0017708333333333332,
+              'localId': 'RTCOutboundRTPAudioStream_545464236',
+              'roundTripTime': 0.052
             }
-          };
-
-          const stats2 = {
-            'ssrc_2422518318_recv': {
-              'id': 'ssrc_2422518318_recv',
-              'timestamp': '2016-06-17T12:22:21.374Z',
-              'type': 'ssrc',
-              'packetsLost': '100',
-              'packetsReceived': '1000',
-              'ssrc': '2422518318',
-              'googTrackId': 'c25d5324-45ef-4653-8444-25b468afa76b',
-              'transportId': 'Channel-video-1',
+          }, {
+            'key': 'RTCOutboundRTPAudioStream_545464236',
+            'value': {
+              'id': 'RTCOutboundRTPAudioStream_545464236',
+              'timestamp': 1571687966413.522,
+              'type': 'outbound-rtp',
+              'ssrc': 545464236,
+              'isRemote': false,
               'mediaType': 'audio',
-              'googCodecName': 'opus',
-              'bytesReceived': '0'
+              'kind': 'audio',
+              'trackId': 'RTCMediaStreamTrack_sender_1',
+              'transportId': 'RTCTransport_audio_1',
+              'codecId': 'RTCCodec_audio_Outbound_111',
+              'mediaSourceId': 'RTCAudioSource_1',
+              'packetsSent': 2481,
+              'retransmittedPacketsSent': 18,
+              'bytesSent': 210799,
+              'retransmittedBytesSent': 0
             }
-          };
+          }];
 
-          const stats3 = {
-            'ssrc_2422518318_recv': {
-              'id': 'ssrc_2422518318_recv',
-              'timestamp': '2016-06-17T12:22:21.374Z',
-              'type': 'ssrc',
-              'packetsLost': '400',
-              'packetsReceived': '2000',
-              'ssrc': '2422518318',
-              'googTrackId': 'c25d5324-45ef-4653-8444-25b468afa76b',
-              'transportId': 'Channel-video-1',
+          const stats2 = [{
+            'key': 'RTCRemoteInboundRtpAudioStream_545464236',
+            'value': {
+              'id': 'RTCRemoteInboundRtpAudioStream_545464236',
+              'timestamp': 1571687961465.791,
+              'type': 'remote-inbound-rtp',
+              'ssrc': 545464236,
+              'kind': 'audio',
+              'transportId': 'RTCTransport_audio_1',
+              'codecId': 'RTCCodec_audio_Outbound_111',
+              'packetsLost': 61,
+              'jitter': 0.0017708333333333332,
+              'localId': 'RTCOutboundRTPAudioStream_545464236',
+              'roundTripTime': 0.052
+            }
+          }, {
+            'key': 'RTCOutboundRTPAudioStream_545464236',
+            'value': {
+              'id': 'RTCOutboundRTPAudioStream_545464236',
+              'timestamp': 1571687967413.522,
+              'type': 'outbound-rtp',
+              'ssrc': 545464236,
+              'isRemote': false,
               'mediaType': 'audio',
-              'googCodecName': 'opus',
-              'bytesReceived': '0'
+              'kind': 'audio',
+              'trackId': 'RTCMediaStreamTrack_sender_1',
+              'transportId': 'RTCTransport_audio_1',
+              'codecId': 'RTCCodec_audio_Outbound_111',
+              'mediaSourceId': 'RTCAudioSource_1',
+              'packetsSent': 3481,
+              'retransmittedPacketsSent': 18,
+              'bytesSent': 210799,
+              'retransmittedBytesSent': 0
             }
-          };
+          }];
 
-          report1 = gatherer._createStatsReport(stats1, true);
-          report2 = gatherer._createStatsReport(stats2, true);
-          report3 = gatherer._createStatsReport(stats3, true);
-
-          assert.equal(report2.remoteTracks[0].intervalLoss, 10);
-          assert.equal(report3.remoteTracks[0].intervalLoss, 30);
+          gatherer._createStatsReport(stats1, true);
+          const report2 = gatherer._createStatsReport(stats2, true);
+          assert.equal(report2.tracks[0].intervalPacketLoss, 6);
         });
       });
 
@@ -162,10 +182,10 @@ describe('StatsGatherer', function () {
           assert.equal(report1.name, 'getStats');
           assert.deepEqual(report1.session, opts.session);
           assert.deepEqual(report1.conference, opts.conference);
-          assert.equal(report1.tracks.length, 0);
-          assert.equal(report1.networkType, 'lan');
+          assert.equal(report1.tracks.length, 2);
+          assert.equal(report1.networkType, 'ethernet');
           assert.equal(report1.localCandidateChanged, false);
-          assert.equal(report1.candidatePair, 'host;serverreflexive');
+          assert.equal(report1.candidatePair, 'prflx;host');
 
           assert.ok(report2);
           assert.equal(report2.name, 'getStats');
@@ -174,8 +194,9 @@ describe('StatsGatherer', function () {
           assert.equal(report2.tracks.length, 2);
           // report 2 has same candidates
           assert.equal(report2.localCandidateChanged, false);
-          assert.equal(report2.networkType, 'lan');
-          assert.equal(report1.candidatePair, 'host;serverreflexive');
+          assert.equal(report2.networkType, 'ethernet');
+          assert.equal(report2.candidatePair, 'prflx;host');
+          assert.equal(report2.candidatePairHadActiveSource, true);
 
           assert.ok(report3);
           assert.equal(report3.name, 'getStats');
@@ -184,8 +205,8 @@ describe('StatsGatherer', function () {
           assert.equal(report3.tracks.length, 0);
           // report 3 has different candidates
           assert.equal(report3.localCandidateChanged, true);
-          assert.equal(report3.networkType, 'wlan');
-          assert.equal(report1.candidatePair, 'host;serverreflexive');
+          assert.equal(report2.networkType, 'ethernet');
+          assert.equal(report2.candidatePair, 'prflx;host');
         });
 
         it('should accurately get track properties for the report', function () {
@@ -194,59 +215,39 @@ describe('StatsGatherer', function () {
           assert.ok(audioTrack.bitrate);
           assert.equal(isNaN(audioTrack.bitrate), false);
           assert.equal(audioTrack.kind, 'audio');
-          assert.equal(audioTrack.lost, 18);
-          assert.equal(audioTrack.loss, 0);
-          assert.equal(audioTrack.muted, false);
-          assert.equal(audioTrack.aecDivergentFilterFraction, 0);
-          assert.equal(audioTrack.googEchoCanellationEchoDelayMedian, 0);
-          assert.equal(audioTrack.googEchoCancellationEchoDelayStdDev, 0);
-          assert.equal(audioTrack.googEchoCancellationReturnLoss, -100);
-          assert.equal(audioTrack.googEchoCancellationReturnLossEnhancement, -100);
+          assert.equal(audioTrack.packetLoss, 0.04030632809351068);
+          assert.equal(audioTrack.jitter, 0.0017708333333333332);
+          assert.equal(audioTrack.echoReturnLoss, -100);
+          assert.equal(audioTrack.echoReturnLossEnhancement, 0.18);
+          assert.equal(audioTrack.audioLevel, 0.0008239997558519242);
+          assert.equal(audioTrack.totalAudioEnergy, 1.227674190176716);
+          assert.equal(audioTrack.codec, '111 audio/opus 48000');
 
           const videoTrack = report2.tracks[1];
           assert.ok(videoTrack.track);
           assert.ok(videoTrack.bitrate);
-          assert.equal(isNaN(videoTrack.bitrate), false);
+          assert.equal(videoTrack.bitrate, 527);
           assert.equal(videoTrack.kind, 'video');
-          assert.equal(videoTrack.lost, 10000);
-          assert.equal(videoTrack.loss, 8);
-          assert.equal(videoTrack.muted, false);
-
-          // these don't exist for video
-          assert.equal(videoTrack.aecDivergentFilterFraction, undefined);
-          assert.equal(videoTrack.googEchoCanellationEchoDelayMedian, undefined);
-          assert.equal(videoTrack.googEchoCancellationEchoDelayStdDev, undefined);
-          assert.equal(videoTrack.googEchoCancellationReturnLoss, undefined);
-          assert.equal(videoTrack.googEchoCancellationReturnLossEnhancement, undefined);
+          assert.equal(videoTrack.packetLoss, 0.565859792518076);
+          assert.equal(videoTrack.codec, '100 video/VP8 90000');
         });
 
+        // the test data is kind of bad for testing this since it requires
+        // two stats reports which include the same track for most things, and in
+        // the current state, it only has remote stats in mock-spec-stats-2, so there's no
+        // delta to measure loss, bitrate, etc
         it('should include remote tracks', function () {
           assert.equal(report2.remoteTracks.length, 2);
-
           const audioTrack = report2.remoteTracks[0];
           assert.ok(audioTrack.track);
-          assert.ok(audioTrack.bitrate);
-          assert.equal(isNaN(audioTrack.bitrate), false);
-          assert.equal(audioTrack.kind, 'audio');
-          assert.equal(audioTrack.lost, 23);
-          assert.equal(audioTrack.loss, 0);
-          assert.equal(audioTrack.muted, false);
+          assert.equal(audioTrack.audioLevel, 0.0008239997558519242);
+          assert.equal(audioTrack.totalAudioEnergy, 2.077036001267227);
+          assert.equal(audioTrack.codec, '111 audio/opus 48000');
 
           const videoTrack = report2.remoteTracks[1];
           assert.ok(videoTrack.track);
-          assert.ok(videoTrack.bitrate);
-          assert.equal(isNaN(videoTrack.bitrate), false);
-          assert.equal(videoTrack.kind, 'video');
-          assert.equal(videoTrack.lost, 2521);
-          assert.equal(videoTrack.loss, 2);
-          assert.equal(videoTrack.muted, false);
-        });
-
-        it('should include rtt and jitter', function () {
-          assert.equal(report2.audioRtt, 23);
-          assert.equal(report2.videoRtt, 23);
-          assert.equal(report2.audioJitter, 2);
-          assert.equal(report2.videoJitter, undefined); // no video jitter reported in mock stats
+          assert.equal(videoTrack.bytes, 7637399);
+          assert.equal(videoTrack.codec, '100 video/VP8 90000');
         });
 
         it('should properly determine a track kind');
@@ -275,7 +276,7 @@ describe('StatsGatherer', function () {
       it('should emit a stats event if already disconnected');
 
       it('should collect stats for a recvonly stream', function (done) {
-        sinon.stub(gatherer.connection.pc.peerconnection, 'getStats').returns(Promise.resolve(mockStats3));
+        sinon.stub(gatherer.connection.pc.peerconnection, 'getStats').returns(Promise.resolve(mockStatsRecvOnly));
 
         let gotInitial = false;
         gatherer.statsInterval = 10;
@@ -287,9 +288,10 @@ describe('StatsGatherer', function () {
             gatherer.connection.emit('iceConnectionStateChange');
 
             assert.equal(stats.remoteTracks.length, 1);
-            assert.equal(stats.remoteTracks[0].bytesReceived, 3519798);
+            assert.equal(stats.remoteTracks[0].bytes, 7637399);
             done();
           } else {
+            console.log('got initial');
             gotInitial = true;
           }
         });
@@ -322,8 +324,6 @@ describe('StatsGatherer', function () {
           assert.ok(stats.platform, 'platform');
           assert.ok(stats.cores, 'cores');
           assert.ok(stats.networkType, 'networkType');
-          assert.ok(stats.dtlsCipher, 'dtlsCipher');
-          assert.ok(stats.srtpCipher, 'srtpCipher');
           assert.ok(stats.candidatePair, 'candidatePair');
           assert.ok(stats.candidatePairDetails, 'candidatePairDetails');
           done();
