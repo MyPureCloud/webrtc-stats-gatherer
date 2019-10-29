@@ -32,6 +32,9 @@
   ],
   "author": "Xander Dumaine <xander.dumaine@inin.com>, Garrett Jensen <garrett.jensen@inin.com>, Fippo & Lance <3",
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "bugs": {
     "url": "https://github.com/mypurecloud/webrtc-stats-gatherer/issues"
   },
