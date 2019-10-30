@@ -19,9 +19,19 @@ webappPipeline {
     cmConfig = {
         return [
             managerEmail: 'purecloud-client-media@genesys.com',
-            rollbackPlan: 'Patch version with fix'
+            rollbackPlan: 'Patch version with fix',
+            testResults: 'https://jenkins.ininica.com/job/valve-webrtc-stats-tests-test/'
         ]
     }
 
     shouldTagOnRelease = { true }
+
+    postReleaseStep = {
+        sshagent(credentials: [constants.credentials.github.inin_dev_evangelists]) {
+            sh("""
+                git tag v${version}
+                git push origin --tags
+            """)
+        }
+    }
 }
