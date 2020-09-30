@@ -1,26 +1,22 @@
 {
   "name": "webrtc-stats-gatherer",
-  "version": "8.0.2",
+  "version": "9.0.0",
   "description": "Gathers stats on interval for webrtc peer connection",
-  "main": "dist/webrtc-stats-gatherer.cjs",
-  "browser": "dist/webrtc-stats-gatherer.min.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "src",
     "dist"
   ],
   "scripts": {
-    "lint": "semistandard",
-    "build": "npm run build-web && npm run build-node",
+    "clean": "rimraf dist lib",
+    "build": "npm run clean && tsc",
     "build-web": "webpack && webpack --env.production",
     "build-node": "webpack --env.node && webpack --env.node --env.production",
-    "prepublish": "npm run build && npm run _test",
-    "_test": "_mocha",
-    "test-server": "npm run _test -- -w",
-    "test": "npm run lint && npm run _test",
-    "posttest": "npm run coverage && npm run check:coverage",
-    "coverage": "./scripts/genCoverage.sh",
-    "check:coverage": "./scripts/checkCoverage.sh",
-    "coveralls": "cat ./coverage/lcov.info | coveralls"
+    "_test": "jest",
+    "test": "npm run lint && jest",
+    "lint": "tslint --project . --config tslint.json",
+    "lint:fix": "tslint --project . --config tslint.json --fix"
   },
   "repository": {
     "type": "git",
@@ -40,19 +36,16 @@
   },
   "homepage": "https://github.com/mypurecloud/webrtc-stats-gatherer#readme",
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.5",
-    "babel-preset-env": "^1.7.0",
-    "chai": "^4.0.2",
-    "coveralls": "^3.0.0",
-    "istanbul": "^1.0.0-alpha.2",
-    "mocha": "^5.0.0",
+    "@types/jest": "^26.0.14",
+    "jest": "^26.4.2",
     "pre-commit": "^1.1.3",
     "pre-push": "^0.1.1",
+    "rimraf": "^3.0.2",
     "run-sequence": "^2.0.0",
-    "semistandard": "^12.0.0",
-    "sinon": "^6.0.0",
+    "ts-jest": "^26.4.1",
+    "tslint": "^6.1.3",
+    "tslint-config-semistandard": "^8.0.1",
+    "typescript": "^4.0.3",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.1.0"
   },
@@ -62,15 +55,5 @@
   "pre-commit": [
     "lint"
   ],
-  "semistandard": {
-    "ignore": [
-      "**/out/",
-      "/lib/select2/",
-      "/lib/ckeditor/",
-      "tmp.js"
-    ]
-  },
-  "dependencies": {
-    "wildemitter": "^1.2.0"
-  }
+  "dependencies": {}
 }

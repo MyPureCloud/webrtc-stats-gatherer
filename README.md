@@ -13,10 +13,22 @@ Note that this project makes use of event emitting capabilities of [RTCPeerConne
 
 ## API
 
-`constructor(peerConnection, opts)`
+`constructor(peerConnection: RTCPeerConnection, opts: StatsGathererOpts)`
 
-`collectStats()`
+```
+interface StatsGathererOpts {
+  session?: string;     // sessionId
+  initiator?: string;
+  conference?: string;  // conversationId
+  interval?: number;    // interval, in seconds, at which stats are polled (default to 5)
+  logger?: any;         // defaults to console
+}
+```
 
-`collectTraces()`
+## Usage
+```
+import StatsGatherer from 'webrtc-stats-gatherer';
 
-`collectInitialConnectionStats`
+const gatherer = new StatsGatherer(myPeerConnection);
+gatherer.on('stats', (statsEvent) => doSomethingWithStats(statsEvent));
+```
