@@ -7,8 +7,10 @@ webappPipeline {
     projectName = 'webrtc-stats-gatherer'
     manifest = directoryManifest('dist')
     buildType = { (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'release') ? 'MAINLINE' : 'FEATURE' }
-    publishPackage = { 'prod' }
-    testJob = 'valve-webrtc-stats-tests'
+    publishPackage = { 'dev' }
+    shouldDeployDev = { true }
+    shouldDeployTest = { false }
+    shouldTestProd = { false }
 
     buildStep = {
         sh('''
@@ -16,12 +18,10 @@ webappPipeline {
         ''')
     }
 
-    cmConfig = {
-        return [
-            managerEmail: 'purecloud-client-media@genesys.com',
-            rollbackPlan: 'Patch version with fix',
-            testResults: 'https://jenkins.ininica.com/job/valve-webrtc-stats-tests-test/'
-        ]
+    upsertCMStep = {
+        sh('''
+            echo "no CM needed since this is not a standalone app"
+        ''')
     }
 
     shouldTagOnRelease = { true }
