@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { GetStatsEvent, TrackStats } from './interfaces';
 
+export * from './interfaces';
+
 let IS_BROWSER;
 
 const MAX_CANDIDATE_WAIT_ATTEMPTS = 3;
