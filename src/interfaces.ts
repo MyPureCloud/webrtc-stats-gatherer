@@ -35,5 +35,16 @@ export interface GetStatsEvent {
   tracks: TrackStats[];
   remoteTracks: TrackStats[];
   candidatePairHadActiveSource?: boolean;
-
+  localCandidateChanged?: boolean;
+  remoteCandidateChanged?: false;
+  networkType?: string;
+  candidatePair?: string;
+  bytesSent?: number;
+  bytesReceived?: number;
+  requestsReceived?: number;
+  requestsSent?: number;
+  responsesReceived?: number;
+  responsesSent?: number;
+  consentRequestsSent?: number;
+  totalRoundTripTime?: number;
 }
