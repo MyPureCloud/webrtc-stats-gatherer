@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { GetStatsEvent, TrackStats } from './interfaces';
+import { FailureEvent, GetStatsEvent, StatsConnectEvent, TrackStats } from './interfaces';
 
 export * from './interfaces';
 
@@ -87,7 +87,7 @@ export default class StatsGatherer extends EventEmitter {
         cores = window.navigator.hardwareConcurrency;
       }
 
-      const event = {
+      const event: StatsConnectEvent = {
         name: 'connect',
         userAgent,
         platform,
@@ -109,7 +109,7 @@ export default class StatsGatherer extends EventEmitter {
         this.iceFailedTime = window.performance.now() - this.iceStartTime;
       }
       return this.gatherStats().then((reports) => {
-        const event = {
+        const event: FailureEvent = {
           name: 'failure',
           session: this.session,
           initiator: this.initiator,
@@ -317,7 +317,7 @@ export default class StatsGatherer extends EventEmitter {
   }
 
   private createStatsReport (results: Array<{key: RTCStatsType, value: any}>, updateLastResult: boolean = true): GetStatsEvent {
-    const event = {
+    const event: GetStatsEvent = {
       name: 'getStats',
       session: this.session,
       initiator: this.initiator,
