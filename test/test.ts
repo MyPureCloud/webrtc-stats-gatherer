@@ -470,6 +470,29 @@ describe('StatsGatherer', () => {
     });
   });
 
+  describe('checkBitrate', () => {
+    it('should return false if the last five remote audio bitrates are zero', () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      const stat = {
+        remoteTracks: [{bitrate: 0}]
+      };
+      gatherer['statsArr'] = [stat, stat, stat, stat, stat];
+
+      expect(gatherer['checkBitrate'](stat)).toEqual(false);
+
+    });
+
+    it('should return true if the bitrate is zero but array is not full.', () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      const stat = {
+        remoteTracks: [{bitrate: 0}]
+      };
+      gatherer['statsArr'] = [];
+
+      expect(gatherer['checkBitrate'](stat)).toEqual(true);
+
+    });
+  })
   describe('handleConnectionStateChange', () => {
     it('should pollStats if connected', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
