@@ -34,6 +34,8 @@ export default class StatsGatherer extends EventEmitter {
 
   private logger: any;
 
+  private statsArr: Array<object>;
+
   constructor (public peerConnection: RTCPeerConnection, opts: StatsGathererOpts = {}) {
     super();
     IS_BROWSER = typeof window !== 'undefined';
@@ -262,7 +264,10 @@ export default class StatsGatherer extends EventEmitter {
       return this.gatherStats().then((reports) => {
         const event = this.createStatsReport(reports, true);
         if (event.tracks.length > 0 || event.remoteTracks.length > 0) {
-          this.emit('stats', event);
+          // If the last five stat events have a remote bitrate of 0, stop emitting.
+          if (this.checkBitrate(event)) {
+            this.emit('stats', event);
+          }
         }
       });
     };
@@ -271,6 +276,23 @@ export default class StatsGatherer extends EventEmitter {
       window.setTimeout(statsPoll, 0);
       this.pollingInterval = window.setInterval(statsPoll, this.statsInterval);
     }
+  }
+
+  private checkBitrate (stat) {
+    // If the stat does not have a bitrate of zero, automatically emit and clear the array.
+    if (stat.remoteTracks[0].bitrate !== 0) {
+      this.statsArr = [];
+      return true;
+    }
+
+    // If we get five consecutive stats with zero bitrate, stop emitting.
+    if (this.statsArr.length >= 5) {
+      return false;
+    }
+
+    // Record stat with zero bitrate to array.
+    this.statsArr.push(stat);
+    return true;
   }
 
   private polyFillStats (results: RTCStatsReport): Array<{key: RTCStatsType, value: any}> {
