@@ -131,27 +131,10 @@ VERSION      : ${env.VERSION}
           version = "${packageJson.version}-${featureBranch}.${env.BUILD_NUMBER}".toString()
         }
 
-        def npmFunctions = null
-        def gitFunctions = null
-        def pwd = pwd()
-
-        stage('Download npm & git utils') {
-            script {
-              // clone pipelines repo
-                dir('pipelines') {
-                    git branch: 'COMUI-857',
-                        url: 'git@bitbucket.org:inindca/pipeline-library.git',
-                        changelog: false
-
-                    npmFunctions = load 'src/com/genesys/jenkins/Npm.groovy'
-                    gitFunctions = load 'src/com/genesys/jenkins/Git.groovy'
-                }
-            }
-        } // end download pipeline utils
 
         stage('Publish to NPM') {
             script {
-                dir(pwd) {
+                dir(pwd()) {
                     npmFunctions.publishNpmPackage([
                         tag: tag, // optional
                         useArtifactoryRepo: false, // optional, default `true`
@@ -159,6 +142,14 @@ VERSION      : ${env.VERSION}
                         dryRun: false // dry run the publish, default `false`
                     ])
                 }
+
+                def message = "**${env.APP_NAME}** ${version} (Build [#${env.BUILD_NUMBER}](${env.BUILD_URL})) has been published to **npm**"
+
+                if (!tag) {
+                  message = ":loudspeaker: ${message}"
+                }
+
+                notifications.requestToGenericWebhooksWithMessage(chatGroupId, message);
             }
         } // end publish to npm
 
