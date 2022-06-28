@@ -1,37 +1,190 @@
-@Library('pipeline-library@webapp-pipelines') _
+@Library('pipeline-library@COMUI-857') _
 
-webappPipeline {
-    slaveLabel = 'dev_v2'
-    nodeVersion = '10.16.2'
-    useArtifactoryRepo = false
-    projectName = 'webrtc-stats-gatherer'
-    manifest = directoryManifest('dist')
-    buildType = { (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'release') ? 'MAINLINE' : 'FEATURE' }
-    publishPackage = { 'dev' }
-    shouldDeployDev = { true }
-    shouldDeployTest = { false }
-    shouldTestProd = { false }
+def MAIN_BRANCH = 'master'
+def isBitbucket = false
 
-    buildStep = {
-        sh('''
-            npm i && npm test && npm run build
-        ''')
-    }
+def isMain = {
+  env.BRANCH_NAME == MAIN_BRANCH
+}
 
-    upsertCMStep = {
-        sh('''
-            echo "no CM needed since this is not a standalone app"
-        ''')
-    }
+def isMainline = {
+  isMain()
+}
 
-    shouldTagOnRelease = { true }
+def getBranchType = {
+  isMainline() ? 'MAINLINE' : 'FEATURE'
+}
 
-    postReleaseStep = {
-        sshagent(credentials: [constants.credentials.github.inin_dev_evangelists]) {
-            sh("""
-                git tag v${version}
-                git push origin --tags
-            """)
+def hasRunSpigotTests = false
+def testSpigotByEnv = { environment, branch ->
+   stage("Spigot test '${environment}'") {
+        script {
+            println("Scheduling spigot test for: { env: '${environment}', branch: '${branch}' }")
+            build(job: 'spigot-tests-streaming-client-entry',
+                    parameters: [
+                        string(name: 'ENVIRONMENT', value: environment),
+                        string(name: 'BRANCH_TO_TEST', value: branch)
+                    ],
+                    propagate: true,
+                    wait: true // wait for the test job to finish
+            )
         }
     }
 }
+
+def npmFunctions = new com.genesys.jenkins.Npm()
+def gitFunctions = new com.genesys.jenkins.Git()
+def notifications = new com.genesys.jenkins.Notifications()
+
+// PCM – Just Send It
+def chatGroupId = 'adhoc-60e40c95-3d9c-458e-a48e-ca4b29cf486d'
+
+webappPipeline {
+    nodeVersion = '14.x'
+    projectName = 'webrtc-stats-gatherer'
+    team = 'Genesys Client Media (WebRTC)'
+
+    mailer = 'genesyscloud-client-media@genesys.com'
+    chatGroupId = chatGroupId
+
+    nodeVersion = '14.x'
+    buildType = getBranchType
+
+    manifest = directoryManifest('dist')
+    }
+    testJob = 'no-tests' // see buildStep to spigot tests
+
+    snykConfig = {
+        return [
+            organization: 'genesys-client-media-webrtc',
+            wait: true
+        ]
+    }
+
+    List deployConfig = []
+
+    ciTests = {
+        println("""
+========= BUILD VARIABLES =========
+ENVIRONMENT  : ${env.ENVIRONMENT}
+BUILD_NUMBER : ${env.BUILD_NUMBER}
+BUILD_ID     : ${env.BUILD_ID}
+BRANCH_NAME  : ${env.BRANCH_NAME}
+APP_NAME     : ${env.APP_NAME}
+VERSION      : ${env.VERSION}
+===================================
+      """)
+
+      sh("""
+        npm i -g npm@7
+        npm ci
+        npm run test
+      """)
+    }
+
+    buildStep = {cdnUrl ->
+        sh("""
+            echo 'CDN_URL ${cdnUrl}'
+            npm --versions
+            npm run build
+        """)
+    }
+
+    onSuccess = {
+       sh("""
+            echo "=== root folder ==="
+            ls -als ./
+
+            echo "=== Printing manifest.json ==="
+            cat ./manifest.json
+
+            echo "=== Printing package.json ==="
+            cat ./package.json
+
+            echo "=== dist folder ==="
+            ls -als dist/
+
+            echo "=== Printing dist/deploy-info.json ==="
+            cat ./dist/deploy-info.json
+
+            # echo "=== Printing dist/package.json ==="
+            # cat ./dist/package.json
+        """)
+
+        // NOTE: this version only applies to the npm version published and NOT the cdn publish url/version
+        def version = env.VERSION
+        def packageJsonPath = "./package.json"
+        def tag = ""
+
+        // save a copy of the original package.json
+        // sh("cp ${packageJsonPath} ${packageJsonPath}.orig")
+
+        // if not MAIN branch, then we need to adjust the verion in the package.json
+        if (!isMain()) {
+          // load the package.json version
+          def packageJson = readJSON(file: packageJsonPath)
+          def featureBranch = env.BRANCH_NAME
+
+          // all feature branches default to --alpha
+          tag = "alpha"
+
+          if (isRelease()) {
+            tag = "next"
+            featureBranch = "release"
+          }
+
+          version = "${packageJson.version}-${featureBranch}.${env.BUILD_NUMBER}".toString()
+        }
+
+        def npmFunctions = null
+        def gitFunctions = null
+        def pwd = pwd()
+
+        stage('Download npm & git utils') {
+            script {
+              // clone pipelines repo
+                dir('pipelines') {
+                    git branch: 'COMUI-857',
+                        url: 'git@bitbucket.org:inindca/pipeline-library.git',
+                        changelog: false
+
+                    npmFunctions = load 'src/com/genesys/jenkins/Npm.groovy'
+                    gitFunctions = load 'src/com/genesys/jenkins/Git.groovy'
+                }
+            }
+        } // end download pipeline utils
+
+        stage('Publish to NPM') {
+            script {
+                dir(pwd) {
+                    npmFunctions.publishNpmPackage([
+                        tag: tag, // optional
+                        useArtifactoryRepo: false, // optional, default `true`
+                        version: version, // optional, default is version in package.json
+                        dryRun: false // dry run the publish, default `false`
+                    ])
+                }
+            }
+        } // end publish to npm
+
+        if (isMain()) {
+            stage('Tag commit and merge main branch back into develop branch') {
+                script {
+                    gitFunctions.tagCommit(
+                      "v${version}",
+                      gitFunctions.getCurrentCommit(),
+                      false
+                    )
+
+                    gitFunctions.mergeBackAndPrep(
+                      MAIN_BRANCH,
+                      DEVELOP_BRANCH,
+                      'patch',
+                      false
+                    )
+                }
+            } // end tag commit and merge back
+        } // isMain()
+
+    } // onSuccess
+} // end
