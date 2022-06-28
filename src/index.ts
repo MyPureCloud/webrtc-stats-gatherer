@@ -453,7 +453,7 @@ export default class StatsGatherer extends EventEmitter {
       trackInfo.retransmittedPacketsSent = source.retransmittedPacketsSent;
     } else {
       trackInfo.packetsReceived = source.packetsReceived;
-      trackInfo.packetLoss = trackInfo.packetsLost / (trackInfo.packetsReceived * 100 || 1);
+      trackInfo.packetLoss = trackInfo.packetsLost / (trackInfo.packetsReceived || 1) * 100;
 
       if (lastResultSource) {
         trackInfo.intervalPacketsReceived = trackInfo.packetsReceived - lastResultSource.packetsReceived;
