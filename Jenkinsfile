@@ -11,7 +11,7 @@ def isMainline = {
   isMain()
 }
 
-def getBranchType = {
+def getBuildType = {
   isMainline() ? 'MAINLINE' : 'FEATURE'
 }
 
@@ -40,28 +40,25 @@ def notifications = new com.genesys.jenkins.Notifications()
 def chatGroupId = 'adhoc-60e40c95-3d9c-458e-a48e-ca4b29cf486d'
 
 webappPipeline {
-    nodeVersion = '14.x'
     projectName = 'webrtc-stats-gatherer'
     team = 'Genesys Client Media (WebRTC)'
-
     mailer = 'genesyscloud-client-media@genesys.com'
     chatGroupId = chatGroupId
 
     nodeVersion = '14.x'
-    buildType = getBranchType
+    buildType = getBuildType
 
     manifest = directoryManifest('dist')
-    }
-    testJob = 'no-tests' // see buildStep to spigot tests
 
     snykConfig = {
-        return [
-            organization: 'genesys-client-media-webrtc',
-            wait: true
-        ]
+      return [
+        organization: 'genesys-client-media-webrtc'
+      ]
     }
 
     List deployConfig = []
+
+    testJob = 'no-tests' // see buildStep to spigot tests
 
     ciTests = {
         println("""
@@ -84,8 +81,6 @@ VERSION      : ${env.VERSION}
 
     buildStep = {cdnUrl ->
         sh("""
-            echo 'CDN_URL ${cdnUrl}'
-            npm --versions
             npm run build
         """)
     }
