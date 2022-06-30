@@ -280,7 +280,7 @@ export default class StatsGatherer extends EventEmitter {
 
   private checkBitrate (stat) {
     // If the stat does not have a bitrate of zero, automatically emit and clear the array.
-    if (stat.remoteTracks[0].bitrate !== 0) {
+    if (stat.remoteTracks.length && stat.remoteTracks[0]?.bitrate !== 0) {
       this.statsArr = [];
       return true;
     }
