@@ -34,7 +34,7 @@ export default class StatsGatherer extends EventEmitter {
 
   private logger: any;
 
-  private statsArr: Array<object>;
+  private statsArr: Array<object> = [];
 
   constructor (public peerConnection: RTCPeerConnection, opts: StatsGathererOpts = {}) {
     super();
