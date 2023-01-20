@@ -11,6 +11,10 @@ def isMainline = {
   isMain()
 }
 
+def isRelease = {
+  env.BRANCH_NAME.startsWith('release/')
+}
+
 def getBuildType = {
   isMainline() ? 'MAINLINE' : 'FEATURE'
 }
