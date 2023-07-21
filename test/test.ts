@@ -325,7 +325,6 @@ describe('StatsGatherer', () => {
 
     afterEach(function () {
       gatherer.peerConnection.iceConnectionState = 'closed';
-      // gatherer.peerConnection.connectionState = 'closed';
       const event = new Event('iceconnectionstatechange');
       gatherer.peerConnection.dispatchEvent(event);
     });
