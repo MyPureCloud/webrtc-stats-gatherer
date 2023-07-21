@@ -319,6 +319,7 @@ describe('StatsGatherer', () => {
         conference: {}
       };
       rtcPeerConnection.iceConnectionState = 'new';
+      rtcPeerConnection.connectionState = 'connecting';
       gatherer = new StatsGatherer(rtcPeerConnection, opts);
     });
 
@@ -338,6 +339,7 @@ describe('StatsGatherer', () => {
         done();
       });
       gatherer.peerConnection.iceConnectionState = 'connected';
+      gatherer.peerConnection.connectionState = 'connected';
       const event = new Event('iceconnectionstatechange');
       gatherer.peerConnection.dispatchEvent(event);
     });
@@ -368,6 +370,7 @@ describe('StatsGatherer', () => {
 
   describe('gatherStats', function () {
     it('should log failure', async () => {
+      rtcPeerConnection.connectionState = 'connected';
       const gatherer = new StatsGatherer(rtcPeerConnection);
 
       const err = new Error('fake Error');
@@ -376,6 +379,26 @@ describe('StatsGatherer', () => {
 
       await expect(gatherer['gatherStats']()).rejects.toThrowError();
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to gather stats'), { peerConnection: rtcPeerConnection, err });
+    });
+
+    it('should clear interval if closed', async () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      gatherer['pollingInterval'] = 322589;
+      gatherer['IS_BROWSER'] = true;
+      rtcPeerConnection.connectionState = 'closed';
+      rtcPeerConnection.signalingState = 'bleh';
+
+      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const intervalSpy = jest.spyOn(window, 'clearInterval');
+
+      const result = await gatherer['gatherStats']();
+
+      expect(result).toStrictEqual([]);
+      expect(pollSpy).not.toHaveBeenCalled();
+      expect(intervalSpy).toHaveBeenCalled();
+      expect(pollSpy).not.toHaveBeenCalled();
+      expect.assertions(4);
+      jest.resetAllMocks();
     });
   });
 

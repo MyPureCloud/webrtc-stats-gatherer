@@ -330,8 +330,18 @@ export default class StatsGatherer extends EventEmitter {
 
   private async gatherStats (): Promise<Array<{key: RTCStatsType, value: any}>> {
     try {
-      const stats = await this.peerConnection.getStats(null).then(this.polyFillStats.bind(this));
-      return stats;
+      if (['connecting', 'connected'].includes(this.peerConnection.connectionState)) {
+        const stats = await this.peerConnection.getStats(null).then(this.polyFillStats.bind(this));
+        return stats;
+      } else if (this.peerConnection.connectionState === 'closed') {
+        if (this.pollingInterval) {
+          if (IS_BROWSER) {
+            window.clearInterval(this.pollingInterval);
+          }
+          this.pollingInterval = null;
+        }
+        return [];
+      }
     } catch (e) {
       this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect peerconnection.getStats}', { peerConnection: this.peerConnection, err: e });
       return Promise.reject(e);
