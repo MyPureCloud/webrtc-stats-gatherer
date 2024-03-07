@@ -245,13 +245,11 @@ export default class StatsGatherer extends EventEmitter {
         event.type = 'disconnected';
         this.emit('stats', event);
       });
-    } else if (state === 'closed') {
-      if (this.pollingInterval) {
-        if (IS_BROWSER) {
-          window.clearInterval(this.pollingInterval);
-        }
-        this.pollingInterval = null;
+    } else if (['closed', 'failed'].includes(state) && this.pollingInterval) {
+      if (IS_BROWSER) {
+        window.clearInterval(this.pollingInterval);
       }
+      this.pollingInterval = null;
     }
   }
 
