@@ -1,4 +1,4 @@
-@Library('pipeline-library@COMUI-857') _
+@Library('pipeline-library') _
 
 def MAIN_BRANCH = 'master'
 def isBitbucket = false
@@ -17,23 +17,6 @@ def isRelease = {
 
 def getBuildType = {
   isMainline() ? 'MAINLINE' : 'FEATURE'
-}
-
-def hasRunSpigotTests = false
-def testSpigotByEnv = { environment, branch ->
-   stage("Spigot test '${environment}'") {
-        script {
-            println("Scheduling spigot test for: { env: '${environment}', branch: '${branch}' }")
-            build(job: 'spigot-tests-streaming-client-entry',
-                    parameters: [
-                        string(name: 'ENVIRONMENT', value: environment),
-                        string(name: 'BRANCH_TO_TEST', value: branch)
-                    ],
-                    propagate: true,
-                    wait: true // wait for the test job to finish
-            )
-        }
-    }
 }
 
 def npmFunctions = new com.genesys.jenkins.Npm()
