@@ -3,8 +3,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keepa Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 PCM-2326
-# [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.7...HEAD)
-# [v9.0.7](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.5...v9.0.7)
+# [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.8...HEAD)
+# [v9.0.8](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.6...v9.0.8)
 ### Fixed
 * [PCM-2326](https://inindca.atlassian.net/browse/PCM-2326) - Stop stats gathering if the session ends in "fail" state
 
