@@ -29,6 +29,7 @@ def chatGroupId = 'adhoc-60e40c95-3d9c-458e-a48e-ca4b29cf486d'
 webappPipeline {
     projectName = 'webrtc-stats-gatherer'
     team = 'Client Streaming and Signaling'
+    jiraProjectKey = 'STREAM'
     mailer = 'GcMediaStreamSignal@genesys.com'
     chatGroupId = chatGroupId
 
