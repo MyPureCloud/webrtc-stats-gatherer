@@ -52,5 +52,8 @@
   ],
   "pre-commit": [
     "lint"
-  ]
+  ],
+  "volta": {
+    "node": "16.20.2"
+  }
 }
