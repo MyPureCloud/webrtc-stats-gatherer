@@ -14,7 +14,8 @@
     "_test": "jest",
     "test": "npm run lint && jest",
     "lint": "tslint --project . --config tslint.json",
-    "lint:fix": "tslint --project . --config tslint.json --fix"
+    "lint:fix": "tslint --project . --config tslint.json --fix",
+    "greenkeep": "npx npm-check --update"
   },
   "repository": {
     "type": "git",
@@ -36,22 +37,20 @@
   "devDependencies": {
     "@types/jest": "^26.0.14",
     "jest": "^26.4.2",
-    "pre-commit": "^1.1.3",
-    "pre-push": "^0.1.1",
+    "npm-check": "^6.0.1",
+    "pre-commit": "^1.2.2",
+    "pre-push": "^0.1.4",
     "rimraf": "^3.0.2",
     "run-sequence": "^2.0.0",
     "ts-jest": "^26.4.1",
     "tslint": "^6.1.3",
     "tslint-config-semistandard": "^8.0.1",
-    "typescript": "^4.0.3",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.1.0"
+    "typescript": "^4.0.3"
   },
   "pre-push": [
     "test"
   ],
   "pre-commit": [
     "lint"
-  ],
-  "dependencies": {}
+  ]
 }
