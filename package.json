@@ -11,8 +11,6 @@
   "scripts": {
     "clean": "rimraf dist lib",
     "build": "npm run clean && tsc",
-    "build-web": "webpack && webpack --env.production",
-    "build-node": "webpack --env.node && webpack --env.node --env.production",
     "_test": "jest",
     "test": "npm run lint && jest",
     "lint": "tslint --project . --config tslint.json",
