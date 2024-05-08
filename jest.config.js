@@ -9,13 +9,17 @@ module.exports = {
   ],
   transform: {
     '^.+\\.jsx?$': 'babel-jest',
-    '^.+\\.tsx?$': 'ts-jest'
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          target: 'es2015',
+          moduleResolution: 'node',
+          resolveJsonModule: true,
+        },
+      },
+    ],
   },
-  moduleFileExtensions: ['js', 'ts', 'json'],
-  transformIgnorePatterns: [
-    // Add module name that needs to be transpiled
-    // '/node_modules/(?!whatwg-fetch|stanza|xmpp-jid|genesys-cloud-streaming-client).+\\.js$'
-  ],
   collectCoverage: true,
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{js,jsx,ts,tsx}',
@@ -33,13 +37,5 @@ module.exports = {
       statements: 100
     }
   },
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        target: 'es2015',
-        moduleResolution: 'node',
-        resolveJsonModule: true
-      }
-    }
-  }
-};
+  preset: 'ts-jest/presets/js-with-babel',
+}
