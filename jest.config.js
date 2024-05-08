@@ -5,10 +5,9 @@ module.exports = {
     '<rootDir>/test'
   ],
   testMatch: [
-    '<rootDir>/test/**/*.(ts|js)'
+    '<rootDir>/test/**/*.(ts)'
   ],
   transform: {
-    '^.+\\.jsx?$': 'babel-jest',
     '^.+\\.tsx?$': [
       'ts-jest',
       {
@@ -22,7 +21,7 @@ module.exports = {
   },
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/src/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/*.{ts,tsx}',
     '!**/node_modules/**',
     '!**/types/**'
   ],
@@ -37,5 +36,5 @@ module.exports = {
       statements: 100
     }
   },
-  preset: 'ts-jest/presets/js-with-babel',
+  preset: 'ts-jest',
 }
