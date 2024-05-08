@@ -35,17 +35,17 @@
   },
   "homepage": "https://github.com/mypurecloud/webrtc-stats-gatherer#readme",
   "devDependencies": {
-    "@types/jest": "^27.5.2",
-    "jest": "^27.5.1",
-    "jest-environment-jsdom": "^27.5.1",
+    "@types/jest": "^28.1.8",
+    "jest": "^28.1.3",
+    "jest-environment-jsdom": "^28.1.3",
     "npm-check": "^6.0.1",
     "pre-commit": "^1.2.2",
     "pre-push": "^0.1.4",
     "rimraf": "^5.0.5",
-    "ts-jest": "^27.1.5",
+    "ts-jest": "^28.0.8",
     "tslint": "^6.1.3",
     "tslint-config-semistandard": "^8.0.1",
-    "typescript": "^4.9.5"
+    "typescript": "^5.4.5"
   },
   "pre-push": [
     "test"

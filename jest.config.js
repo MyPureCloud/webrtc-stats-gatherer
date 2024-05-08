@@ -35,7 +35,7 @@ module.exports = {
   },
   globals: {
     'ts-jest': {
-      tsConfig: {
+      tsconfig: {
         target: 'es2015',
         moduleResolution: 'node',
         resolveJsonModule: true
