@@ -282,7 +282,7 @@ describe('StatsGatherer', () => {
     it.skip('should emit a stats event if already disconnected', () => {});
 
     it('should collect stats for a recvonly stream', () => {
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockStatsRecvOnly);
 
         let gotInitial = false;
