@@ -33,7 +33,7 @@ webappPipeline {
     mailer = 'GcMediaStreamSignal@genesys.com'
     chatGroupId = chatGroupId
 
-    nodeVersion = '18.x'
+    nodeVersion = '20.x multiarch'
     buildType = getBuildType
 
     manifest = directoryManifest('dist')
