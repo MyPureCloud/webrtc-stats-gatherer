@@ -1,4 +1,3 @@
-/* tslint:disable:no-string-literal */
 import StatsGatherer from '../src';
 
 import mockSpecStatsInitial from './mock-spec-stats-initial.json';

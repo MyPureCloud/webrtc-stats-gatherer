@@ -12,7 +12,7 @@ export interface StatsGathererOpts {
   initiator?: string;
   conference?: string;  // conversationId
   interval?: number;
-  logger?: any;
+  logger?: { error(...any), warn(...any) };
 }
 
 export default class StatsGatherer extends EventEmitter {
@@ -23,16 +23,18 @@ export default class StatsGatherer extends EventEmitter {
   private statsInterval: number;
   private pollingInterval: number;
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   private lastResult: Array<{key: RTCStatsType, value: any}>;
   private lastActiveLocalCandidate: any;
   private lastActiveRemoteCandidate: any;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   private haveConnectionMetrics = false;
   private iceStartTime: number;
   private iceFailedTime: number;
   private iceConnectionTime: number;
 
-  private logger: any;
+  private logger: { error(...any), warn(...any) };
 
   private statsArr: Array<object> = [];
 
@@ -51,7 +53,6 @@ export default class StatsGatherer extends EventEmitter {
     if (['new', 'checking'].includes(peerConnection.iceConnectionState)) {
       if (peerConnection.iceConnectionState === 'checking') {
         this.logger.warn(`iceConnectionState is already in checking state so ice connect time may not be accurate`);
-        // tslint:disable-next-line:no-floating-promises
         this.handleIceStateChange();
       }
 
@@ -110,7 +111,7 @@ export default class StatsGatherer extends EventEmitter {
       if (IS_BROWSER) {
         this.iceFailedTime = window.performance.now() - this.iceStartTime;
       }
-      return this.gatherStats().then((reports) => {
+      return this.gatherStats().then(() => {
         const event: FailureEvent = {
           name: 'failure',
           session: this.session,
@@ -179,7 +180,7 @@ export default class StatsGatherer extends EventEmitter {
   }
 
   private gatherSelectedCandidateInfo (reports, event) {
-    let activeCandidatePair = this.getSelectedCandidatePair(reports);
+    const activeCandidatePair = this.getSelectedCandidatePair(reports);
 
     if (activeCandidatePair) {
       const localId = activeCandidatePair.localCandidateId;
@@ -187,7 +188,7 @@ export default class StatsGatherer extends EventEmitter {
       let localCandidate;
       let remoteCandidate;
 
-      reports.forEach(function ({ key, value }) {
+      reports.forEach(function ({ value }) {
         const report = value;
         if (localId && report.type === 'local-candidate' && report.id === localId) {
           localCandidate = report;
@@ -293,6 +294,7 @@ export default class StatsGatherer extends EventEmitter {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private polyFillStats (results: RTCStatsReport): Array<{key: RTCStatsType, value: any}> {
     if (!results) {
       return [];
@@ -319,13 +321,15 @@ export default class StatsGatherer extends EventEmitter {
       this.logger.warn('Unknown stats results format, returning unmodified', results);
       return [];
     }
-    return betterResults as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return betterResults as Array<{key: RTCStatsType, value: any}>;
   }
 
-  private isNativeStatsReport (results: any) {
+  private isNativeStatsReport (results: RTCStatsReport) {
     return typeof window.RTCStatsReport !== 'undefined' && results instanceof window.RTCStatsReport;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async gatherStats (): Promise<Array<{key: RTCStatsType, value: any}>> {
     try {
       if (['connecting', 'connected'].includes(this.peerConnection.connectionState)) {
@@ -346,6 +350,7 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private createStatsReport (results: Array<{key: RTCStatsType, value: any}>, updateLastResult: boolean = true): GetStatsEvent {
     const event: GetStatsEvent = {
       name: 'getStats',
@@ -379,10 +384,12 @@ export default class StatsGatherer extends EventEmitter {
   }
 
   // todo source should be RTCInboundRTPStreamStats | RTCOutboundRTPStreamStats but the lib.dom definitions are out of date or not accurate
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private processSource ({ source, results, event }: { source: any, results: Array<{key: RTCStatsType, value: any}>, event: GetStatsEvent }) {
     const now = new Date(source.timestamp);
 
     // todo lastResultSource should be RTCInboundRTPStreamStats | RTCOutboundRTPStreamStats
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let lastResultSource: any = this.lastResult && this.lastResult.find(r => r.key === source.id);
     lastResultSource = lastResultSource && lastResultSource.value;
 
@@ -508,7 +515,6 @@ export default class StatsGatherer extends EventEmitter {
         this.checkLastActiveCandidate({
           localId,
           remoteId,
-          key: result.key,
           report: result.value
         });
       });
@@ -531,7 +537,7 @@ export default class StatsGatherer extends EventEmitter {
     event.totalRoundTripTime = report.totalRoundTripTime;
   }
 
-  private checkLastActiveCandidate ({ localId, remoteId, key, report }) {
+  private checkLastActiveCandidate ({ localId, remoteId, report }) {
     if (localId && report.type === 'local-candidate' && report.id === localId) {
       this.lastActiveLocalCandidate = report;
     }
