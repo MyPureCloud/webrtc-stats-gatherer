@@ -1,5 +1,10 @@
 import { EventEmitter } from 'events';
-import { FailureEvent, GetStatsEvent, StatsConnectEvent, TrackStats } from './interfaces';
+import {
+  FailureEvent,
+  GetStatsEvent,
+  StatsConnectEvent,
+  TrackStats,
+} from './interfaces';
 
 export * from './interfaces';
 
@@ -8,11 +13,11 @@ let IS_BROWSER;
 const MAX_CANDIDATE_WAIT_ATTEMPTS = 3;
 
 export interface StatsGathererOpts {
-  session?: string;     // sessionId
+  session?: string; // sessionId
   initiator?: string;
-  conference?: string;  // conversationId
+  conference?: string; // conversationId
   interval?: number;
-  logger?: { error(...any), warn(...any) };
+  logger?: { error(...any); warn(...any) };
 }
 
 export default class StatsGatherer extends EventEmitter {
@@ -24,7 +29,7 @@ export default class StatsGatherer extends EventEmitter {
   private pollingInterval: number;
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  private lastResult: Array<{key: RTCStatsType, value: any}>;
+  private lastResult: Array<{ key: RTCStatsType; value: any }>;
   private lastActiveLocalCandidate: any;
   private lastActiveRemoteCandidate: any;
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -34,11 +39,14 @@ export default class StatsGatherer extends EventEmitter {
   private iceFailedTime: number;
   private iceConnectionTime: number;
 
-  private logger: { error(...any), warn(...any) };
+  private logger: { error(...any); warn(...any) };
 
   private statsArr: Array<object> = [];
 
-  constructor (public peerConnection: RTCPeerConnection, opts: StatsGathererOpts = {}) {
+  constructor(
+    public peerConnection: RTCPeerConnection,
+    opts: StatsGathererOpts = {},
+  ) {
     super();
     IS_BROWSER = typeof window !== 'undefined';
 
@@ -52,20 +60,28 @@ export default class StatsGatherer extends EventEmitter {
 
     if (['new', 'checking'].includes(peerConnection.iceConnectionState)) {
       if (peerConnection.iceConnectionState === 'checking') {
-        this.logger.warn(`iceConnectionState is already in checking state so ice connect time may not be accurate`);
+        this.logger.warn(
+          `iceConnectionState is already in checking state so ice connect time may not be accurate`,
+        );
         this.handleIceStateChange();
       }
 
-      peerConnection.addEventListener('iceconnectionstatechange', this.handleIceStateChange.bind(this));
+      peerConnection.addEventListener(
+        'iceconnectionstatechange',
+        this.handleIceStateChange.bind(this),
+      );
     }
 
-    peerConnection.addEventListener('connectionstatechange', this.handleConnectionStateChange.bind(this));
+    peerConnection.addEventListener(
+      'connectionstatechange',
+      this.handleConnectionStateChange.bind(this),
+    );
     if (peerConnection.connectionState === 'connected') {
       this.pollForStats();
     }
   }
 
-  private handleIceStateChange () {
+  private handleIceStateChange() {
     const state = this.peerConnection.iceConnectionState;
 
     if (state === 'checking') {
@@ -97,14 +113,13 @@ export default class StatsGatherer extends EventEmitter {
         cores,
         session: this.session,
         conference: this.conference,
-        connectTime: this.iceConnectionTime
+        connectTime: this.iceConnectionTime,
       };
 
-      return this.waitForSelectedCandidatePair()
-        .then((stats) => {
-          this.gatherSelectedCandidateInfo(stats, event);
-          this.emit('stats', event);
-        });
+      return this.waitForSelectedCandidatePair().then((stats) => {
+        this.gatherSelectedCandidateInfo(stats, event);
+        this.emit('stats', event);
+      });
     }
 
     if (state === 'failed') {
@@ -124,23 +139,31 @@ export default class StatsGatherer extends EventEmitter {
           numLocalRelayCandidates: 0,
           numRemoteHostCandidates: 0,
           numRemoteSrflxCandidates: 0,
-          numRemoteRelayCandidates: 0
+          numRemoteRelayCandidates: 0,
         };
 
-        const localCandidates = this.peerConnection.localDescription.sdp.split('\r\n').filter(function (line) {
-          return line.indexOf('a=candidate:') > -1;
-        });
-        const remoteCandidates = this.peerConnection.remoteDescription.sdp.split('\r\n').filter(function (line) {
-          return line.indexOf('a=candidate:') > -1;
-        });
+        const localCandidates = this.peerConnection.localDescription.sdp
+          .split('\r\n')
+          .filter(function (line) {
+            return line.indexOf('a=candidate:') > -1;
+          });
+        const remoteCandidates = this.peerConnection.remoteDescription.sdp
+          .split('\r\n')
+          .filter(function (line) {
+            return line.indexOf('a=candidate:') > -1;
+          });
 
         ['Host', 'Srflx', 'Relay'].forEach(function (type) {
-          event['numLocal' + type + 'Candidates'] = localCandidates.filter(function (line) {
-            return line.split(' ')[7] === type.toLowerCase();
-          }).length;
-          event['numRemote' + type + 'Candidates'] = remoteCandidates.filter(function (line) {
-            return line.split(' ')[7] === type.toLowerCase();
-          }).length;
+          event['numLocal' + type + 'Candidates'] = localCandidates.filter(
+            function (line) {
+              return line.split(' ')[7] === type.toLowerCase();
+            },
+          ).length;
+          event['numRemote' + type + 'Candidates'] = remoteCandidates.filter(
+            function (line) {
+              return line.split(' ')[7] === type.toLowerCase();
+            },
+          ).length;
         });
 
         this.emit('stats', event);
@@ -148,28 +171,39 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
-  private waitForSelectedCandidatePair (delay = 300, attempt = 1) {
-    return this.gatherStats()
-      .then((reports) => {
-        if (!this.getSelectedCandidatePair(reports)) {
-          if (attempt > MAX_CANDIDATE_WAIT_ATTEMPTS) {
-            return Promise.reject(new Error('Max wait attempts for connected candidate info reached'));
-          }
-
-          return new Promise((resolve, reject) => {
-            setTimeout(() => this.waitForSelectedCandidatePair(delay, attempt + 1).then(resolve, reject), delay);
-          });
-        } else {
-          return reports;
+  private waitForSelectedCandidatePair(delay = 300, attempt = 1) {
+    return this.gatherStats().then((reports) => {
+      if (!this.getSelectedCandidatePair(reports)) {
+        if (attempt > MAX_CANDIDATE_WAIT_ATTEMPTS) {
+          return Promise.reject(
+            new Error('Max wait attempts for connected candidate info reached'),
+          );
         }
-      });
+
+        return new Promise((resolve, reject) => {
+          setTimeout(
+            () =>
+              this.waitForSelectedCandidatePair(delay, attempt + 1).then(
+                resolve,
+                reject,
+              ),
+            delay,
+          );
+        });
+      } else {
+        return reports;
+      }
+    });
   }
 
-  private getSelectedCandidatePair (reports) {
+  private getSelectedCandidatePair(reports) {
     let activeCandidatePair = null;
     reports.forEach(function ({ value }) {
       const report = value;
-      const selected = report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded';
+      const selected =
+        report.type === 'candidate-pair' &&
+        report.nominated &&
+        report.state === 'succeeded';
 
       if (selected) {
         activeCandidatePair = report;
@@ -179,7 +213,7 @@ export default class StatsGatherer extends EventEmitter {
     return activeCandidatePair;
   }
 
-  private gatherSelectedCandidateInfo (reports, event) {
+  private gatherSelectedCandidateInfo(reports, event) {
     const activeCandidatePair = this.getSelectedCandidatePair(reports);
 
     if (activeCandidatePair) {
@@ -190,23 +224,32 @@ export default class StatsGatherer extends EventEmitter {
 
       reports.forEach(function ({ value }) {
         const report = value;
-        if (localId && report.type === 'local-candidate' && report.id === localId) {
+        if (
+          localId &&
+          report.type === 'local-candidate' &&
+          report.id === localId
+        ) {
           localCandidate = report;
           event.localCandidateType = report.candidateType;
         }
 
-        if (remoteId && report.type === 'remote-candidate' && report.id === remoteId) {
+        if (
+          remoteId &&
+          report.type === 'remote-candidate' &&
+          report.id === remoteId
+        ) {
           remoteCandidate = report;
           event.remoteCandidateType = report.candidateType;
         }
       });
 
       if (localCandidate && remoteCandidate) {
-        event.candidatePair = localCandidate.candidateType + ';' + remoteCandidate.candidateType;
+        event.candidatePair =
+          localCandidate.candidateType + ';' + remoteCandidate.candidateType;
         event.candidatePairDetails = {
           local: localCandidate,
           remote: remoteCandidate,
-          pair: activeCandidatePair
+          pair: activeCandidatePair,
         };
       }
 
@@ -218,7 +261,7 @@ export default class StatsGatherer extends EventEmitter {
           const turnTypes = {
             2: 'udp',
             1: 'tcp',
-            0: 'tls'
+            0: 'tls',
           };
 
           const priority = parseInt(localCandidate.priority, 10);
@@ -226,12 +269,14 @@ export default class StatsGatherer extends EventEmitter {
           event.networkType = localCandidate.networkType;
         }
 
-        event.usingIPv6 = localCandidate.ipAddress && localCandidate.ipAddress.indexOf('[') === 0;
+        event.usingIPv6 =
+          localCandidate.ipAddress &&
+          localCandidate.ipAddress.indexOf('[') === 0;
       }
     }
   }
 
-  private async handleConnectionStateChange () {
+  private async handleConnectionStateChange() {
     const state = this.peerConnection.connectionState;
 
     if (state === 'connected') {
@@ -254,7 +299,7 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
-  private pollForStats () {
+  private pollForStats() {
     if (this.pollingInterval) {
       return;
     }
@@ -277,7 +322,7 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
-  private checkBitrate (stat) {
+  private checkBitrate(stat) {
     // If the stat does not have a bitrate of zero, automatically emit and clear the array.
     if (stat.remoteTracks.length && stat.remoteTracks[0]?.bitrate !== 0) {
       this.statsArr = [];
@@ -294,8 +339,11 @@ export default class StatsGatherer extends EventEmitter {
     return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private polyFillStats (results: RTCStatsReport): Array<{key: RTCStatsType, value: any}> {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  private polyFillStats(
+    results: RTCStatsReport,
+  ): Array<{ key: RTCStatsType; value: any }> {
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     if (!results) {
       return [];
     }
@@ -311,29 +359,44 @@ export default class StatsGatherer extends EventEmitter {
         betterResults.push({ key, value });
       });
     } else if (Object.keys(results).length > 0) {
-      Object.keys(results).forEach(key => {
+      Object.keys(results).forEach((key) => {
         betterResults.push({
           key,
-          value: results[key]
+          value: results[key],
         });
       });
     } else {
-      this.logger.warn('Unknown stats results format, returning unmodified', results);
+      this.logger.warn(
+        'Unknown stats results format, returning unmodified',
+        results,
+      );
       return [];
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return betterResults as Array<{key: RTCStatsType, value: any}>;
+    return betterResults as Array<{ key: RTCStatsType; value: any }>;
   }
 
-  private isNativeStatsReport (results: RTCStatsReport) {
-    return typeof window.RTCStatsReport !== 'undefined' && results instanceof window.RTCStatsReport;
+  private isNativeStatsReport(results: RTCStatsReport) {
+    return (
+      typeof window.RTCStatsReport !== 'undefined' &&
+      results instanceof window.RTCStatsReport
+    );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async gatherStats (): Promise<Array<{key: RTCStatsType, value: any}>> {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  private async gatherStats(): Promise<
+    Array<{ key: RTCStatsType; value: any }>
+  > {
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     try {
-      if (['connecting', 'connected'].includes(this.peerConnection.connectionState)) {
-        const stats = await this.peerConnection.getStats(null).then(this.polyFillStats.bind(this));
+      if (
+        ['connecting', 'connected'].includes(
+          this.peerConnection.connectionState,
+        )
+      ) {
+        const stats = await this.peerConnection
+          .getStats(null)
+          .then(this.polyFillStats.bind(this));
         return stats;
       } else if (this.peerConnection.connectionState === 'closed') {
         if (this.pollingInterval) {
@@ -345,35 +408,53 @@ export default class StatsGatherer extends EventEmitter {
         return [];
       }
     } catch (e) {
-      this.logger.error('Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect peerconnection.getStats}', { peerConnection: this.peerConnection, err: e });
+      this.logger.error(
+        'Failed to gather stats. Are you using RTCPeerConnection as your connection? {expect peerconnection.getStats}',
+        { peerConnection: this.peerConnection, err: e },
+      );
       return Promise.reject(e);
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private createStatsReport (results: Array<{key: RTCStatsType, value: any}>, updateLastResult: boolean = true): GetStatsEvent {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  private createStatsReport(
+    results: Array<{ key: RTCStatsType; value: any }>,
+    updateLastResult: boolean = true,
+  ): GetStatsEvent {
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     const event: GetStatsEvent = {
       name: 'getStats',
       session: this.session,
       initiator: this.initiator,
       conference: this.conference,
       tracks: [],
-      remoteTracks: []
+      remoteTracks: [],
     };
 
-    const sources = results.filter(r => ['inbound-rtp', 'outbound-rtp'].indexOf(r.value.type) > -1);
+    const sources = results.filter(
+      (r) => ['inbound-rtp', 'outbound-rtp'].indexOf(r.value.type) > -1,
+    );
 
-    sources.forEach(source => {
+    sources.forEach((source) => {
       this.processSource({
         source: source.value,
         event,
-        results
+        results,
       });
     });
 
-    const candidatePair = results.find(r => r.value.type === 'candidate-pair' && r.value.state === 'succeeded' && r.value.nominated === true);
+    const candidatePair = results.find(
+      (r) =>
+        r.value.type === 'candidate-pair' &&
+        r.value.state === 'succeeded' &&
+        r.value.nominated === true,
+    );
     if (candidatePair) {
-      this.processSelectedCandidatePair({ report: candidatePair.value, event, results });
+      this.processSelectedCandidatePair({
+        report: candidatePair.value,
+        event,
+        results,
+      });
     }
 
     if (updateLastResult) {
@@ -384,19 +465,32 @@ export default class StatsGatherer extends EventEmitter {
   }
 
   // todo source should be RTCInboundRTPStreamStats | RTCOutboundRTPStreamStats but the lib.dom definitions are out of date or not accurate
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private processSource ({ source, results, event }: { source: any, results: Array<{key: RTCStatsType, value: any}>, event: GetStatsEvent }) {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  private processSource({
+    source,
+    results,
+    event,
+  }: {
+    source: any;
+    results: Array<{ key: RTCStatsType; value: any }>;
+    event: GetStatsEvent;
+  }) {
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     const now = new Date(source.timestamp);
 
     // todo lastResultSource should be RTCInboundRTPStreamStats | RTCOutboundRTPStreamStats
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let lastResultSource: any = this.lastResult && this.lastResult.find(r => r.key === source.id);
+    let lastResultSource: any =
+      this.lastResult && this.lastResult.find((r) => r.key === source.id);
     lastResultSource = lastResultSource && lastResultSource.value;
 
     let lastResultRemoteSource;
     if (lastResultSource) {
-      lastResultRemoteSource = this.lastResult && this.lastResult.find(r => r.value.localId === lastResultSource.id);
-      lastResultRemoteSource = lastResultRemoteSource && lastResultRemoteSource.value;
+      lastResultRemoteSource =
+        this.lastResult &&
+        this.lastResult.find((r) => r.value.localId === lastResultSource.id);
+      lastResultRemoteSource =
+        lastResultRemoteSource && lastResultRemoteSource.value;
     }
 
     // for outbound-rtp, the correspondingRemoteSource will be remote-inbound-rtp
@@ -408,7 +502,7 @@ export default class StatsGatherer extends EventEmitter {
     let mediaSource;
     let codec;
 
-    results.forEach(r => {
+    results.forEach((r) => {
       if (r.value.localId === source.id) {
         correspondingRemoteSource = r.value;
       } else if (r.key === source.transportId) {
@@ -422,7 +516,9 @@ export default class StatsGatherer extends EventEmitter {
       }
     });
     if (transport) {
-      candidatePair = results.find(r => r.key === transport.selectedCandidatePairId);
+      candidatePair = results.find(
+        (r) => r.key === transport.selectedCandidatePairId,
+      );
       candidatePair = candidatePair && candidatePair.value;
     }
 
@@ -436,10 +532,16 @@ export default class StatsGatherer extends EventEmitter {
       track: track && track.trackIdentifier,
       kind,
       jitter: getDefinedValue('jitter', source, correspondingRemoteSource),
-      roundTripTime: getDefinedValue('roundTripTime', source, correspondingRemoteSource),
-      packetsLost: getDefinedValue('packetsLost', source, correspondingRemoteSource) || 0,
+      roundTripTime: getDefinedValue(
+        'roundTripTime',
+        source,
+        correspondingRemoteSource,
+      ),
+      packetsLost:
+        getDefinedValue('packetsLost', source, correspondingRemoteSource) || 0,
       packetLoss: 0,
-      bytes: parseInt(isOutbound ? source.bytesSent : source.bytesReceived, 10) || 0
+      bytes:
+        parseInt(isOutbound ? source.bytesSent : source.bytesReceived, 10) || 0,
     };
 
     if (codec) {
@@ -447,33 +549,57 @@ export default class StatsGatherer extends EventEmitter {
     }
 
     if (lastResultSource) {
-      const previousBytesTotal = parseInt(isOutbound ? lastResultSource.bytesSent : lastResultSource.bytesReceived, 10) || 0;
-      const deltaTime = now.getTime() - new Date(lastResultSource.timestamp).getTime();
-      trackInfo.bitrate = Math.floor(8 * (trackInfo.bytes - previousBytesTotal) / deltaTime);
+      const previousBytesTotal =
+        parseInt(
+          isOutbound
+            ? lastResultSource.bytesSent
+            : lastResultSource.bytesReceived,
+          10,
+        ) || 0;
+      const deltaTime =
+        now.getTime() - new Date(lastResultSource.timestamp).getTime();
+      trackInfo.bitrate = Math.floor(
+        (8 * (trackInfo.bytes - previousBytesTotal)) / deltaTime,
+      );
     }
 
-    const lastPacketsLost = getDefinedValue('packetsLost', lastResultSource, lastResultRemoteSource);
+    const lastPacketsLost = getDefinedValue(
+      'packetsLost',
+      lastResultSource,
+      lastResultRemoteSource,
+    );
 
     if (isOutbound) {
       trackInfo.packetsSent = source.packetsSent;
-      trackInfo.packetLoss = trackInfo.packetsLost / (trackInfo.packetsSent || 1) * 100;
+      trackInfo.packetLoss =
+        (trackInfo.packetsLost / (trackInfo.packetsSent || 1)) * 100;
 
       if (lastResultSource) {
-        trackInfo.intervalPacketsSent = trackInfo.packetsSent - (lastResultSource.packetsSent || 0);
-        trackInfo.intervalPacketsLost = trackInfo.packetsLost - (lastPacketsLost || 0);
-        trackInfo.intervalPacketLoss = trackInfo.intervalPacketsLost / (trackInfo.intervalPacketsSent || 1) * 100;
+        trackInfo.intervalPacketsSent =
+          trackInfo.packetsSent - (lastResultSource.packetsSent || 0);
+        trackInfo.intervalPacketsLost =
+          trackInfo.packetsLost - (lastPacketsLost || 0);
+        trackInfo.intervalPacketLoss =
+          (trackInfo.intervalPacketsLost /
+            (trackInfo.intervalPacketsSent || 1)) *
+          100;
       }
 
       trackInfo.retransmittedBytesSent = source.retransmittedBytesSent;
       trackInfo.retransmittedPacketsSent = source.retransmittedPacketsSent;
     } else {
       trackInfo.packetsReceived = source.packetsReceived;
-      trackInfo.packetLoss = trackInfo.packetsLost / (trackInfo.packetsReceived || 1) * 100;
+      trackInfo.packetLoss =
+        (trackInfo.packetsLost / (trackInfo.packetsReceived || 1)) * 100;
 
       if (lastResultSource) {
-        trackInfo.intervalPacketsReceived = trackInfo.packetsReceived - lastResultSource.packetsReceived;
+        trackInfo.intervalPacketsReceived =
+          trackInfo.packetsReceived - lastResultSource.packetsReceived;
         trackInfo.intervalPacketsLost = trackInfo.packetsLost - lastPacketsLost;
-        trackInfo.intervalPacketLoss = trackInfo.intervalPacketsLost / (trackInfo.intervalPacketsReceived || 1) * 100;
+        trackInfo.intervalPacketLoss =
+          (trackInfo.intervalPacketsLost /
+            (trackInfo.intervalPacketsReceived || 1)) *
+          100;
       }
     }
 
@@ -493,7 +619,9 @@ export default class StatsGatherer extends EventEmitter {
     }
 
     // remove undefined properties from trackInfo
-    Object.keys(trackInfo).forEach(key => trackInfo[key] === undefined && delete trackInfo[key]);
+    Object.keys(trackInfo).forEach(
+      (key) => trackInfo[key] === undefined && delete trackInfo[key],
+    );
 
     if (isOutbound) {
       event.tracks.push(trackInfo);
@@ -502,20 +630,28 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
-  private processSelectedCandidatePair ({ report, event, results }) {
+  private processSelectedCandidatePair({ report, event, results }) {
     // this is the active candidate pair, check if it's the same id as last one
     const localId = report.localCandidateId;
     const remoteId = report.remoteCandidateId;
 
-    event.localCandidateChanged = !!this.lastActiveLocalCandidate && localId !== this.lastActiveLocalCandidate.id;
-    event.remoteCandidateChanged = !!this.lastActiveRemoteCandidate && remoteId !== this.lastActiveRemoteCandidate.id;
+    event.localCandidateChanged =
+      !!this.lastActiveLocalCandidate &&
+      localId !== this.lastActiveLocalCandidate.id;
+    event.remoteCandidateChanged =
+      !!this.lastActiveRemoteCandidate &&
+      remoteId !== this.lastActiveRemoteCandidate.id;
 
-    if (!this.lastActiveLocalCandidate || event.localCandidateChanged || event.remoteCandidateChanged) {
-      results.forEach(result => {
+    if (
+      !this.lastActiveLocalCandidate ||
+      event.localCandidateChanged ||
+      event.remoteCandidateChanged
+    ) {
+      results.forEach((result) => {
         this.checkLastActiveCandidate({
           localId,
           remoteId,
-          report: result.value
+          report: result.value,
         });
       });
     }
@@ -523,7 +659,10 @@ export default class StatsGatherer extends EventEmitter {
     if (this.lastActiveLocalCandidate) {
       event.networkType = this.lastActiveLocalCandidate.networkType;
       if (this.lastActiveRemoteCandidate) {
-        event.candidatePair = this.lastActiveLocalCandidate.candidateType + ';' + this.lastActiveRemoteCandidate.candidateType;
+        event.candidatePair =
+          this.lastActiveLocalCandidate.candidateType +
+          ';' +
+          this.lastActiveRemoteCandidate.candidateType;
       }
     }
 
@@ -537,18 +676,24 @@ export default class StatsGatherer extends EventEmitter {
     event.totalRoundTripTime = report.totalRoundTripTime;
   }
 
-  private checkLastActiveCandidate ({ localId, remoteId, report }) {
+  private checkLastActiveCandidate({ localId, remoteId, report }) {
     if (localId && report.type === 'local-candidate' && report.id === localId) {
       this.lastActiveLocalCandidate = report;
     }
-    if (remoteId && report.type === 'remote-candidate' && report.id === remoteId) {
+    if (
+      remoteId &&
+      report.type === 'remote-candidate' &&
+      report.id === remoteId
+    ) {
       this.lastActiveRemoteCandidate = report;
     }
   }
 }
 
 // returns the first value in the list of objects that is not undefined or null
-function getDefinedValue (propertyName, ...objects) {
-  const item = objects.find((obj) => obj && (obj[propertyName] || obj[propertyName] === 0));
+function getDefinedValue(propertyName, ...objects) {
+  const item = objects.find(
+    (obj) => obj && (obj[propertyName] || obj[propertyName] === 0),
+  );
   return item && item[propertyName];
 }

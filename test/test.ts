@@ -26,11 +26,11 @@ import mockSdp from './mock-sdp.json';
 // }
 
 class MockRtcPeerConnection extends EventTarget {
-  constructor () {
+  constructor() {
     super();
   }
 
-  getStats () {
+  getStats() {
     return Promise.resolve();
   }
 }
@@ -59,26 +59,30 @@ describe('StatsGatherer', () => {
       jest.advanceTimersByTime(500);
 
       expect(spy).toHaveBeenCalled();
-      jest.useRealTimers()
+      jest.useRealTimers();
     });
 
     it('should warn if iceConnectionState is already checking', () => {
       const logger = {
-        warn: jest.fn()
+        warn: jest.fn(),
       };
 
       rtcPeerConnection.iceConnectionState = 'checking';
 
       const gatherer = new StatsGatherer(rtcPeerConnection, { logger });
 
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('iceConnectionState is already in checking'));
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('iceConnectionState is already in checking'),
+      );
     });
   });
 
   describe('_gatherStats', function () {
     it('should call into the native getstats method', function () {
       const gatherer = new StatsGatherer(rtcPeerConnection);
-      jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockSpecStats1 as any);
+      jest
+        .spyOn(gatherer.peerConnection, 'getStats')
+        .mockResolvedValue(mockSpecStats1 as any);
       return gatherer['gatherStats']();
     });
   });
@@ -89,84 +93,90 @@ describe('StatsGatherer', () => {
     beforeEach(function () {
       opts = {
         session: {},
-        conference: {}
+        conference: {},
       };
       gatherer = new StatsGatherer(rtcPeerConnection, opts);
     });
 
     describe('intervalLoss', function () {
       it('should generate intervalLoss', function () {
-        const stats1 = [{
-          'key': 'RTCRemoteInboundRtpAudioStream_545464236',
-          'value': {
-            'id': 'RTCRemoteInboundRtpAudioStream_545464236',
-            'timestamp': 1571687960465.791,
-            'type': 'remote-inbound-rtp',
-            'ssrc': 545464236,
-            'kind': 'audio',
-            'transportId': 'RTCTransport_audio_1',
-            'codecId': 'RTCCodec_audio_Outbound_111',
-            'packetsLost': 1,
-            'jitter': 0.0017708333333333332,
-            'localId': 'RTCOutboundRTPAudioStream_545464236',
-            'roundTripTime': 0.052
-          }
-        }, {
-          'key': 'RTCOutboundRTPAudioStream_545464236',
-          'value': {
-            'id': 'RTCOutboundRTPAudioStream_545464236',
-            'timestamp': 1571687966413.522,
-            'type': 'outbound-rtp',
-            'ssrc': 545464236,
-            'isRemote': false,
-            'mediaType': 'audio',
-            'kind': 'audio',
-            'trackId': 'RTCMediaStreamTrack_sender_1',
-            'transportId': 'RTCTransport_audio_1',
-            'codecId': 'RTCCodec_audio_Outbound_111',
-            'mediaSourceId': 'RTCAudioSource_1',
-            'packetsSent': 2481,
-            'retransmittedPacketsSent': 18,
-            'bytesSent': 210799,
-            'retransmittedBytesSent': 0
-          }
-        }];
+        const stats1 = [
+          {
+            key: 'RTCRemoteInboundRtpAudioStream_545464236',
+            value: {
+              id: 'RTCRemoteInboundRtpAudioStream_545464236',
+              timestamp: 1571687960465.791,
+              type: 'remote-inbound-rtp',
+              ssrc: 545464236,
+              kind: 'audio',
+              transportId: 'RTCTransport_audio_1',
+              codecId: 'RTCCodec_audio_Outbound_111',
+              packetsLost: 1,
+              jitter: 0.0017708333333333332,
+              localId: 'RTCOutboundRTPAudioStream_545464236',
+              roundTripTime: 0.052,
+            },
+          },
+          {
+            key: 'RTCOutboundRTPAudioStream_545464236',
+            value: {
+              id: 'RTCOutboundRTPAudioStream_545464236',
+              timestamp: 1571687966413.522,
+              type: 'outbound-rtp',
+              ssrc: 545464236,
+              isRemote: false,
+              mediaType: 'audio',
+              kind: 'audio',
+              trackId: 'RTCMediaStreamTrack_sender_1',
+              transportId: 'RTCTransport_audio_1',
+              codecId: 'RTCCodec_audio_Outbound_111',
+              mediaSourceId: 'RTCAudioSource_1',
+              packetsSent: 2481,
+              retransmittedPacketsSent: 18,
+              bytesSent: 210799,
+              retransmittedBytesSent: 0,
+            },
+          },
+        ];
 
-        const stats2 = [{
-          'key': 'RTCRemoteInboundRtpAudioStream_545464236',
-          'value': {
-            'id': 'RTCRemoteInboundRtpAudioStream_545464236',
-            'timestamp': 1571687961465.791,
-            'type': 'remote-inbound-rtp',
-            'ssrc': 545464236,
-            'kind': 'audio',
-            'transportId': 'RTCTransport_audio_1',
-            'codecId': 'RTCCodec_audio_Outbound_111',
-            'packetsLost': 61,
-            'jitter': 0.0017708333333333332,
-            'localId': 'RTCOutboundRTPAudioStream_545464236',
-            'roundTripTime': 0.052
-          }
-        }, {
-          'key': 'RTCOutboundRTPAudioStream_545464236',
-          'value': {
-            'id': 'RTCOutboundRTPAudioStream_545464236',
-            'timestamp': 1571687967413.522,
-            'type': 'outbound-rtp',
-            'ssrc': 545464236,
-            'isRemote': false,
-            'mediaType': 'audio',
-            'kind': 'audio',
-            'trackId': 'RTCMediaStreamTrack_sender_1',
-            'transportId': 'RTCTransport_audio_1',
-            'codecId': 'RTCCodec_audio_Outbound_111',
-            'mediaSourceId': 'RTCAudioSource_1',
-            'packetsSent': 3481,
-            'retransmittedPacketsSent': 18,
-            'bytesSent': 210799,
-            'retransmittedBytesSent': 0
-          }
-        }];
+        const stats2 = [
+          {
+            key: 'RTCRemoteInboundRtpAudioStream_545464236',
+            value: {
+              id: 'RTCRemoteInboundRtpAudioStream_545464236',
+              timestamp: 1571687961465.791,
+              type: 'remote-inbound-rtp',
+              ssrc: 545464236,
+              kind: 'audio',
+              transportId: 'RTCTransport_audio_1',
+              codecId: 'RTCCodec_audio_Outbound_111',
+              packetsLost: 61,
+              jitter: 0.0017708333333333332,
+              localId: 'RTCOutboundRTPAudioStream_545464236',
+              roundTripTime: 0.052,
+            },
+          },
+          {
+            key: 'RTCOutboundRTPAudioStream_545464236',
+            value: {
+              id: 'RTCOutboundRTPAudioStream_545464236',
+              timestamp: 1571687967413.522,
+              type: 'outbound-rtp',
+              ssrc: 545464236,
+              isRemote: false,
+              mediaType: 'audio',
+              kind: 'audio',
+              trackId: 'RTCMediaStreamTrack_sender_1',
+              transportId: 'RTCTransport_audio_1',
+              codecId: 'RTCCodec_audio_Outbound_111',
+              mediaSourceId: 'RTCAudioSource_1',
+              packetsSent: 3481,
+              retransmittedPacketsSent: 18,
+              bytesSent: 210799,
+              retransmittedBytesSent: 0,
+            },
+          },
+        ];
 
         gatherer['createStatsReport'](stats1, true);
         const report2 = gatherer['createStatsReport'](stats2, true);
@@ -266,7 +276,7 @@ describe('StatsGatherer', () => {
     beforeEach(function () {
       opts = {
         session: {},
-        conference: {}
+        conference: {},
       };
       gatherer = new StatsGatherer(rtcPeerConnection, opts);
     });
@@ -282,7 +292,9 @@ describe('StatsGatherer', () => {
 
     it('should collect stats for a recvonly stream', () => {
       return new Promise<void>((resolve) => {
-        jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockStatsRecvOnly);
+        jest
+          .spyOn(gatherer.peerConnection, 'getStats')
+          .mockResolvedValue(mockStatsRecvOnly);
 
         let gotInitial = false;
         gatherer.statsInterval = 10;
@@ -315,7 +327,7 @@ describe('StatsGatherer', () => {
     beforeEach(function () {
       opts = {
         session: {},
-        conference: {}
+        conference: {},
       };
       rtcPeerConnection.iceConnectionState = 'new';
       rtcPeerConnection.connectionState = 'connecting';
@@ -329,7 +341,9 @@ describe('StatsGatherer', () => {
     });
 
     it('should get emit a stats event with all of the initial connection information', function (done) {
-      jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockSpecStatsInitial);
+      jest
+        .spyOn(gatherer.peerConnection, 'getStats')
+        .mockResolvedValue(mockSpecStatsInitial);
       gatherer.on('stats', function (stats) {
         expect(stats.cores).toBeTruthy();
         expect(stats.networkType).toEqual('ethernet');
@@ -344,7 +358,9 @@ describe('StatsGatherer', () => {
     });
 
     it('should emit a failure report if the state is failed', function (done) {
-      jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockSpecStats1);
+      jest
+        .spyOn(gatherer.peerConnection, 'getStats')
+        .mockResolvedValue(mockSpecStats1);
       gatherer.on('stats', function (event) {
         expect(event.name).toEqual('failure');
         try {
@@ -374,10 +390,15 @@ describe('StatsGatherer', () => {
 
       const err = new Error('fake Error');
       jest.spyOn(rtcPeerConnection, 'getStats').mockRejectedValue(err);
-      const loggerSpy = jest.spyOn(gatherer['logger'], 'error').mockReturnValueOnce(null);
+      const loggerSpy = jest
+        .spyOn(gatherer['logger'], 'error')
+        .mockReturnValueOnce(null);
 
       await expect(gatherer['gatherStats']()).rejects.toThrowError();
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to gather stats'), { peerConnection: rtcPeerConnection, err });
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to gather stats'),
+        { peerConnection: rtcPeerConnection, err },
+      );
     });
 
     it('should clear interval if closed', async () => {
@@ -387,7 +408,9 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'closed';
       rtcPeerConnection.signalingState = 'bleh';
 
-      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const pollSpy = jest
+        .spyOn(gatherer as any, 'pollForStats')
+        .mockReturnValue(null);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       const result = await gatherer['gatherStats']();
@@ -415,14 +438,14 @@ describe('StatsGatherer', () => {
       expect(stats).toEqual([
         {
           key: 'one',
-          value: {}
+          value: {},
         },
         {
           key: 'two',
           value: {
-            roger: 'dodger'
-          }
-        }
+            roger: 'dodger',
+          },
+        },
       ]);
     });
 
@@ -446,22 +469,22 @@ describe('StatsGatherer', () => {
       const map = {
         one: {},
         two: {
-          roger: 'dodger'
-        }
+          roger: 'dodger',
+        },
       };
 
       const stats = gatherer['polyFillStats'](map as any);
       expect(stats).toEqual([
         {
           key: 'one',
-          value: {}
+          value: {},
         },
         {
           key: 'two',
           value: {
-            roger: 'dodger'
-          }
-        }
+            roger: 'dodger',
+          },
+        },
       ]);
     });
 
@@ -496,31 +519,31 @@ describe('StatsGatherer', () => {
     it('should return false if the last five remote audio bitrates are zero', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       const stat = {
-        remoteTracks: [{bitrate: 0}]
+        remoteTracks: [{ bitrate: 0 }],
       };
       gatherer['statsArr'] = [stat, stat, stat, stat, stat];
 
       expect(gatherer['checkBitrate'](stat)).toEqual(false);
-
     });
 
     it('should return true if the bitrate is zero but array is not full.', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       const stat = {
-        remoteTracks: [{bitrate: 0}]
+        remoteTracks: [{ bitrate: 0 }],
       };
       gatherer['statsArr'] = [];
 
       expect(gatherer['checkBitrate'](stat)).toEqual(true);
-
     });
-  })
+  });
   describe('handleConnectionStateChange', () => {
     it('should pollStats if connected', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.connectionState = 'connected';
 
-      const spy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const spy = jest
+        .spyOn(gatherer as any, 'pollForStats')
+        .mockReturnValue(null);
       gatherer['handleConnectionStateChange']();
 
       expect(spy).toHaveBeenCalled();
@@ -531,9 +554,15 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'disconnected';
       rtcPeerConnection.signalingState = 'bleh';
 
-      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
-      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
-      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
+      const pollSpy = jest
+        .spyOn(gatherer as any, 'pollForStats')
+        .mockReturnValue(null);
+      const gatherSpy = jest
+        .spyOn(gatherer as any, 'gatherStats')
+        .mockResolvedValue(null);
+      const reportSpy = jest
+        .spyOn(gatherer as any, 'createStatsReport')
+        .mockReturnValue({} as any);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       gatherer.on('stats', (event) => {
@@ -553,9 +582,15 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'disconnected';
       rtcPeerConnection.signalingState = 'stable';
 
-      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
-      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
-      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
+      const pollSpy = jest
+        .spyOn(gatherer as any, 'pollForStats')
+        .mockReturnValue(null);
+      const gatherSpy = jest
+        .spyOn(gatherer as any, 'gatherStats')
+        .mockResolvedValue(null);
+      const reportSpy = jest
+        .spyOn(gatherer as any, 'createStatsReport')
+        .mockReturnValue({} as any);
 
       gatherer.on('stats', (event) => {
         expect(event.type).toEqual('disconnected');
@@ -572,9 +607,15 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'closed';
       rtcPeerConnection.signalingState = 'bleh';
 
-      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
-      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
-      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
+      const pollSpy = jest
+        .spyOn(gatherer as any, 'pollForStats')
+        .mockReturnValue(null);
+      const gatherSpy = jest
+        .spyOn(gatherer as any, 'gatherStats')
+        .mockResolvedValue(null);
+      const reportSpy = jest
+        .spyOn(gatherer as any, 'createStatsReport')
+        .mockReturnValue({} as any);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       gatherer.on('stats', (event) => {
@@ -617,8 +658,8 @@ describe('StatsGatherer', () => {
             requestsSent: 1,
             responsesReceived: 1,
             responsesSent: 0,
-            consentRequestsSent: 1
-          }
+            consentRequestsSent: 1,
+          },
         },
         {
           key: 'RTCIceCandidatePair_yI+kvNvF_kJy6c1E9',
@@ -640,16 +681,17 @@ describe('StatsGatherer', () => {
             requestsSent: 0,
             responsesReceived: 0,
             responsesSent: 0,
-            consentRequestsSent: 0
-          }
+            consentRequestsSent: 0,
+          },
         },
-      ]
+      ];
     });
 
     it('should wait for candidate pair', async () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
 
-      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats')
+      const gatherSpy = jest
+        .spyOn(gatherer as any, 'gatherStats')
         .mockImplementationOnce(() => Promise.resolve(reportWithCandidatePair))
         .mockImplementationOnce(() => {
           reportWithCandidatePair[0].value.state = 'succeeded';
@@ -682,7 +724,9 @@ describe('StatsGatherer', () => {
     it('should fail after too many tries', async () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
 
-      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(reportWithCandidatePair);
+      const gatherSpy = jest
+        .spyOn(gatherer as any, 'gatherStats')
+        .mockResolvedValue(reportWithCandidatePair);
 
       const promise = gatherer['waitForSelectedCandidatePair']();
       await Promise.resolve();
@@ -711,7 +755,10 @@ describe('StatsGatherer', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.iceConnectionState = 'connected';
       gatherer['haveConnectionMetrics'] = true;
-      const gatherSpy = jest.spyOn(gatherer as any, 'waitForSelectedCandidatePair');
+      const gatherSpy = jest.spyOn(
+        gatherer as any,
+        'waitForSelectedCandidatePair',
+      );
 
       gatherer['handleIceStateChange']();
 
@@ -721,7 +768,10 @@ describe('StatsGatherer', () => {
     it('should set iceStartTime', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.iceConnectionState = 'checking';
-      const gatherSpy = jest.spyOn(gatherer as any, 'waitForSelectedCandidatePair');
+      const gatherSpy = jest.spyOn(
+        gatherer as any,
+        'waitForSelectedCandidatePair',
+      );
 
       expect(gatherer['iceStartTime']).toBeFalsy();
 
@@ -740,11 +790,16 @@ describe('StatsGatherer', () => {
 
       const event: any = {};
 
-      const candidatePairReport = mockSpecStats1.find((report) => report.key === 'RTCIceCandidatePair_WzsdBtXT_nq8LUB9k');
-      gatherer['processSelectedCandidatePair']({ results: mockSpecStats1, event, report: candidatePairReport.value });
+      const candidatePairReport = mockSpecStats1.find(
+        (report) => report.key === 'RTCIceCandidatePair_WzsdBtXT_nq8LUB9k',
+      );
+      gatherer['processSelectedCandidatePair']({
+        results: mockSpecStats1,
+        event,
+        report: candidatePairReport.value,
+      });
 
       expect(event.candidatePair).toEqual('prflx;host');
     });
-
   });
 });

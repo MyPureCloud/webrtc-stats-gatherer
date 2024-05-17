@@ -15,6 +15,7 @@
     "test": "npm run lint && jest",
     "lint": "eslint src",
     "lint:fix": "npm run lint -- --fix",
+    "format": "prettier src --write && prettier test --write",
     "greenkeep": "npx npm-check --update"
   },
   "repository": {
@@ -43,6 +44,7 @@
     "npm-check": "^6.0.1",
     "pre-commit": "^1.2.2",
     "pre-push": "^0.1.4",
+    "prettier": "3.2.5",
     "rimraf": "^5.0.7",
     "ts-jest": "^29.1.2",
     "typescript": "^5.4.5",
@@ -52,7 +54,8 @@
     "test"
   ],
   "pre-commit": [
-    "lint"
+    "lint",
+    "format"
   ],
   "volta": {
     "node": "20.13.0"

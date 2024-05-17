@@ -27,7 +27,7 @@ export interface StatsConnectEvent extends StatsEvent {
       protocol?: string;
       candidateType?: string;
       priority?: number;
-      deleted?: boolean
+      deleted?: boolean;
     };
     remote?: {
       id?: string;
@@ -40,7 +40,7 @@ export interface StatsConnectEvent extends StatsEvent {
       protocol?: string;
       candidateType?: string;
       priority?: number;
-      deleted?: boolean
+      deleted?: boolean;
     };
     pair?: {
       id?: string;
@@ -63,7 +63,7 @@ export interface StatsConnectEvent extends StatsEvent {
       responsesReceived?: number;
       responsesSent?: number;
       consentRequestsSent?: number;
-    }
+    };
   };
   transport?: string;
   networkType?: string;
