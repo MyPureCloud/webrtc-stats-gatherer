@@ -64,6 +64,7 @@ describe('StatsGatherer', () => {
 
     it('should warn if iceConnectionState is already checking', () => {
       const logger = {
+        error: jest.fn(),
         warn: jest.fn(),
       };
 
