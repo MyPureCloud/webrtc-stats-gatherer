@@ -56,8 +56,5 @@
   "pre-commit": [
     "lint",
     "format"
-  ],
-  "volta": {
-    "node": "20.13.0"
-  }
+  ]
 }

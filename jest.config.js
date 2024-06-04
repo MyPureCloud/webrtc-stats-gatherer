@@ -12,7 +12,7 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: {
-          target: 'es2015',
+          target: 'es2020',
           moduleResolution: 'node',
           resolveJsonModule: true,
         },
