@@ -72,18 +72,14 @@ describe('StatsGatherer', () => {
 
       const gatherer = new StatsGatherer(rtcPeerConnection, { logger });
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('iceConnectionState is already in checking'),
-      );
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('iceConnectionState is already in checking'));
     });
   });
 
   describe('_gatherStats', function () {
     it('should call into the native getstats method', function () {
       const gatherer = new StatsGatherer(rtcPeerConnection);
-      jest
-        .spyOn(gatherer.peerConnection, 'getStats')
-        .mockResolvedValue(mockSpecStats1 as any);
+      jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockSpecStats1 as any);
       return gatherer['gatherStats']();
     });
   });
@@ -293,9 +289,7 @@ describe('StatsGatherer', () => {
 
     it('should collect stats for a recvonly stream', () => {
       return new Promise<void>((resolve) => {
-        jest
-          .spyOn(gatherer.peerConnection, 'getStats')
-          .mockResolvedValue(mockStatsRecvOnly);
+        jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockStatsRecvOnly);
 
         let gotInitial = false;
         gatherer.statsInterval = 10;
@@ -342,9 +336,7 @@ describe('StatsGatherer', () => {
     });
 
     it('should get emit a stats event with all of the initial connection information', function (done) {
-      jest
-        .spyOn(gatherer.peerConnection, 'getStats')
-        .mockResolvedValue(mockSpecStatsInitial);
+      jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockSpecStatsInitial);
       gatherer.on('stats', function (stats) {
         expect(stats.cores).toBeTruthy();
         expect(stats.networkType).toEqual('ethernet');
@@ -359,9 +351,7 @@ describe('StatsGatherer', () => {
     });
 
     it('should emit a failure report if the state is failed', function (done) {
-      jest
-        .spyOn(gatherer.peerConnection, 'getStats')
-        .mockResolvedValue(mockSpecStats1);
+      jest.spyOn(gatherer.peerConnection, 'getStats').mockResolvedValue(mockSpecStats1);
       gatherer.on('stats', function (event) {
         expect(event.name).toEqual('failure');
         try {
@@ -391,15 +381,13 @@ describe('StatsGatherer', () => {
 
       const err = new Error('fake Error');
       jest.spyOn(rtcPeerConnection, 'getStats').mockRejectedValue(err);
-      const loggerSpy = jest
-        .spyOn(gatherer['logger'], 'error')
-        .mockReturnValueOnce(null);
+      const loggerSpy = jest.spyOn(gatherer['logger'], 'error').mockReturnValueOnce(null);
 
       await expect(gatherer['gatherStats']()).rejects.toThrowError();
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to gather stats'),
-        { peerConnection: rtcPeerConnection, err },
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to gather stats'), {
+        peerConnection: rtcPeerConnection,
+        err,
+      });
     });
 
     it('should clear interval if closed', async () => {
@@ -409,9 +397,7 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'closed';
       rtcPeerConnection.signalingState = 'bleh';
 
-      const pollSpy = jest
-        .spyOn(gatherer as any, 'pollForStats')
-        .mockReturnValue(null);
+      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       const result = await gatherer['gatherStats']();
@@ -542,9 +528,7 @@ describe('StatsGatherer', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.connectionState = 'connected';
 
-      const spy = jest
-        .spyOn(gatherer as any, 'pollForStats')
-        .mockReturnValue(null);
+      const spy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
       gatherer['handleConnectionStateChange']();
 
       expect(spy).toHaveBeenCalled();
@@ -555,15 +539,9 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'disconnected';
       rtcPeerConnection.signalingState = 'bleh';
 
-      const pollSpy = jest
-        .spyOn(gatherer as any, 'pollForStats')
-        .mockReturnValue(null);
-      const gatherSpy = jest
-        .spyOn(gatherer as any, 'gatherStats')
-        .mockResolvedValue(null);
-      const reportSpy = jest
-        .spyOn(gatherer as any, 'createStatsReport')
-        .mockReturnValue({} as any);
+      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       gatherer.on('stats', (event) => {
@@ -583,15 +561,9 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'disconnected';
       rtcPeerConnection.signalingState = 'stable';
 
-      const pollSpy = jest
-        .spyOn(gatherer as any, 'pollForStats')
-        .mockReturnValue(null);
-      const gatherSpy = jest
-        .spyOn(gatherer as any, 'gatherStats')
-        .mockResolvedValue(null);
-      const reportSpy = jest
-        .spyOn(gatherer as any, 'createStatsReport')
-        .mockReturnValue({} as any);
+      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
 
       gatherer.on('stats', (event) => {
         expect(event.type).toEqual('disconnected');
@@ -608,15 +580,9 @@ describe('StatsGatherer', () => {
       rtcPeerConnection.connectionState = 'closed';
       rtcPeerConnection.signalingState = 'bleh';
 
-      const pollSpy = jest
-        .spyOn(gatherer as any, 'pollForStats')
-        .mockReturnValue(null);
-      const gatherSpy = jest
-        .spyOn(gatherer as any, 'gatherStats')
-        .mockResolvedValue(null);
-      const reportSpy = jest
-        .spyOn(gatherer as any, 'createStatsReport')
-        .mockReturnValue({} as any);
+      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       gatherer.on('stats', (event) => {
@@ -725,9 +691,7 @@ describe('StatsGatherer', () => {
     it('should fail after too many tries', async () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
 
-      const gatherSpy = jest
-        .spyOn(gatherer as any, 'gatherStats')
-        .mockResolvedValue(reportWithCandidatePair);
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(reportWithCandidatePair);
 
       const promise = gatherer['waitForSelectedCandidatePair']();
       await Promise.resolve();
@@ -756,10 +720,7 @@ describe('StatsGatherer', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.iceConnectionState = 'connected';
       gatherer['haveConnectionMetrics'] = true;
-      const gatherSpy = jest.spyOn(
-        gatherer as any,
-        'waitForSelectedCandidatePair',
-      );
+      const gatherSpy = jest.spyOn(gatherer as any, 'waitForSelectedCandidatePair');
 
       gatherer['handleIceStateChange']();
 
@@ -769,10 +730,7 @@ describe('StatsGatherer', () => {
     it('should set iceStartTime', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.iceConnectionState = 'checking';
-      const gatherSpy = jest.spyOn(
-        gatherer as any,
-        'waitForSelectedCandidatePair',
-      );
+      const gatherSpy = jest.spyOn(gatherer as any, 'waitForSelectedCandidatePair');
 
       expect(gatherer['iceStartTime']).toBeFalsy();
 
