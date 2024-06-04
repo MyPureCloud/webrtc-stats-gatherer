@@ -295,8 +295,7 @@ export default class StatsGatherer extends EventEmitter {
     return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private polyFillStats(results: RTCStatsReport): Array<{ key: RTCStatsType; value: any }> {
+  private polyFillStats(results: RTCStatsReport): Array<{ key: RTCStatsType; value: unknown }> {
     if (!results) {
       return [];
     }
@@ -322,16 +321,14 @@ export default class StatsGatherer extends EventEmitter {
       this.logger.warn('Unknown stats results format, returning unmodified', results);
       return [];
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return betterResults as Array<{ key: RTCStatsType; value: any }>;
+    return betterResults as Array<{ key: RTCStatsType; value: unknown }>;
   }
 
   private isNativeStatsReport(results: RTCStatsReport) {
     return typeof window.RTCStatsReport !== 'undefined' && results instanceof window.RTCStatsReport;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async gatherStats(): Promise<Array<{ key: RTCStatsType; value: any }>> {
+  private async gatherStats(): Promise<Array<{ key: RTCStatsType; value: unknown }>> {
     try {
       if (['connecting', 'connected'].includes(this.peerConnection.connectionState)) {
         const stats = await this.peerConnection.getStats(null).then(this.polyFillStats.bind(this));
