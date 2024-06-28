@@ -1,23 +1,27 @@
 module.exports = {
+  testEnvironment: 'jsdom',
   roots: [
     '<rootDir>/src',
     '<rootDir>/test'
   ],
   testMatch: [
-    '<rootDir>/test/**/*.(ts|js)'
+    '<rootDir>/test/**/*.(ts)'
   ],
   transform: {
-    '^.+\\.jsx?$': 'babel-jest',
-    '^.+\\.tsx?$': 'ts-jest'
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          target: 'es2020',
+          moduleResolution: 'node',
+          resolveJsonModule: true,
+        },
+      },
+    ],
   },
-  moduleFileExtensions: ['js', 'ts', 'json'],
-  transformIgnorePatterns: [
-    // Add module name that needs to be transpiled
-    // '/node_modules/(?!whatwg-fetch|stanza|xmpp-jid|genesys-cloud-streaming-client).+\\.js$'
-  ],
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/src/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/*.{ts,tsx}',
     '!**/node_modules/**',
     '!**/types/**'
   ],
@@ -32,13 +36,5 @@ module.exports = {
       statements: 100
     }
   },
-  globals: {
-    'ts-jest': {
-      tsConfig: {
-        target: 'es2015',
-        moduleResolution: 'node',
-        resolveJsonModule: true
-      }
-    }
-  }
-};
+  preset: 'ts-jest',
+}

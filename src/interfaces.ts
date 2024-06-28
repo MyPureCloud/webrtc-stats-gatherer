@@ -17,7 +17,7 @@ export interface StatsConnectEvent extends StatsEvent {
   candidatePairDetails?: {
     local?: {
       id?: string;
-      timestamp?: any;
+      timestamp?: number;
       type?: string;
       transportId?: string;
       isRemote?: boolean;
@@ -27,11 +27,11 @@ export interface StatsConnectEvent extends StatsEvent {
       protocol?: string;
       candidateType?: string;
       priority?: number;
-      deleted?: boolean
+      deleted?: boolean;
     };
     remote?: {
       id?: string;
-      timestamp?: any;
+      timestamp?: number;
       type?: string;
       transportId?: string;
       isRemote?: boolean;
@@ -40,11 +40,11 @@ export interface StatsConnectEvent extends StatsEvent {
       protocol?: string;
       candidateType?: string;
       priority?: number;
-      deleted?: boolean
+      deleted?: boolean;
     };
     pair?: {
       id?: string;
-      timestamp?: any;
+      timestamp?: number;
       type?: string;
       transportId?: string;
       localCandidateId?: string;
@@ -63,7 +63,7 @@ export interface StatsConnectEvent extends StatsEvent {
       responsesReceived?: number;
       responsesSent?: number;
       consentRequestsSent?: number;
-    }
+    };
   };
   transport?: string;
   networkType?: string;
@@ -71,7 +71,7 @@ export interface StatsConnectEvent extends StatsEvent {
 
 export interface FailureEvent extends StatsEvent {
   name: 'failure';
-  failTime: any;
+  failTime: number;
   iceRW?: number;
   numLocalHostCandidates?: number;
   numLocalSrflxCandidates?: number;
