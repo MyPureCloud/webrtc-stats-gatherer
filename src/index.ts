@@ -341,6 +341,8 @@ export default class StatsGatherer extends EventEmitter {
           this.pollingInterval = null;
         }
         return [];
+      } else {
+        return [];
       }
     } catch (e) {
       this.logger.error(

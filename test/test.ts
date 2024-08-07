@@ -409,6 +409,14 @@ describe('StatsGatherer', () => {
       expect.assertions(4);
       jest.resetAllMocks();
     });
+
+    it('should return an empty array for other states (e.g. disconnected)', async () => {
+      rtcPeerConnection.connectionState = 'disconnected';
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+
+      const result = await gatherer['gatherStats']();
+      expect(result).toStrictEqual([]);
+    });
   });
 
   describe('polyFillStats', () => {
