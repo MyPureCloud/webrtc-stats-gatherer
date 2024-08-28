@@ -508,6 +508,21 @@ describe('StatsGatherer', () => {
       expect(timeout).not.toHaveBeenCalled();
       expect(interval).not.toHaveBeenCalled();
     });
+
+    it('should ignore empty stats', async () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+
+      const timeout = jest.spyOn(window, 'setTimeout');
+      gatherer['pollForStats']();
+      const statsPollFn = timeout.mock.calls[0][0];
+
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue([]);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport');
+
+      await statsPollFn();
+
+      expect(reportSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('checkBitrate', () => {
