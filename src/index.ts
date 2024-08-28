@@ -232,7 +232,7 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
-  private async handleConnectionStateChange() {
+  private handleConnectionStateChange() {
     const state = this.peerConnection.connectionState;
 
     if (state === 'connected') {
@@ -242,11 +242,16 @@ export default class StatsGatherer extends EventEmitter {
         return;
       }
 
-      return this.gatherStats().then((reports) => {
-        const event = this.createStatsReport(reports);
-        event.type = 'disconnected';
-        this.emit('stats', event);
-      });
+      const event: GetStatsEvent = {
+        type: 'disconnected',
+        name: 'getStats',
+        session: this.session,
+        initiator: this.initiator,
+        conference: this.conference,
+        tracks: [],
+        remoteTracks: [],
+      };
+      this.emit('stats', event);
     } else if (['closed', 'failed'].includes(state) && this.pollingInterval) {
       if (IS_BROWSER) {
         window.clearInterval(this.pollingInterval);
