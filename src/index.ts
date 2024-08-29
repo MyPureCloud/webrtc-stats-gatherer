@@ -262,7 +262,7 @@ export default class StatsGatherer extends EventEmitter {
 
     const statsPoll = () => {
       return this.gatherStats().then((reports) => {
-        if (reports.length == 0) {
+        if (reports.length === 0) {
           this.logger.warn('Empty stats gathered, ignoring and not emitting stats');
           return;
         }
@@ -373,7 +373,7 @@ export default class StatsGatherer extends EventEmitter {
       remoteTracks: [],
     };
 
-    if (results.length == 0) {
+    if (results.length === 0) {
       return event;
     }
 
