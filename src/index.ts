@@ -232,7 +232,7 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
-  private handleConnectionStateChange() {
+  private async handleConnectionStateChange() {
     const state = this.peerConnection.connectionState;
 
     if (state === 'connected') {
@@ -242,16 +242,11 @@ export default class StatsGatherer extends EventEmitter {
         return;
       }
 
-      const event: GetStatsEvent = {
-        type: 'disconnected',
-        name: 'getStats',
-        session: this.session,
-        initiator: this.initiator,
-        conference: this.conference,
-        tracks: [],
-        remoteTracks: [],
-      };
-      this.emit('stats', event);
+      return this.gatherStats().then((reports) => {
+        const event = this.createStatsReport(reports);
+        event.type = 'disconnected';
+        this.emit('stats', event);
+      });
     } else if (['closed', 'failed'].includes(state) && this.pollingInterval) {
       if (IS_BROWSER) {
         window.clearInterval(this.pollingInterval);
@@ -377,6 +372,10 @@ export default class StatsGatherer extends EventEmitter {
       tracks: [],
       remoteTracks: [],
     };
+
+    if (results.length == 0) {
+      return event;
+    }
 
     const sources = results.filter((r) => ['inbound-rtp', 'outbound-rtp'].indexOf(r.value.type) > -1);
 

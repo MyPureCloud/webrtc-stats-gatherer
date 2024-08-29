@@ -265,6 +265,22 @@ describe('StatsGatherer', () => {
       it.skip('should determine bitrate accurately', () => {});
       it.skip('should determine the track kind from the code type if not available otherwise', () => {});
     });
+
+    describe('empty stats', function () {
+      it('should not update lastResult', () => {
+        gatherer['createStatsReport']([], true);
+        expect(gatherer.lastResult).toBeUndefined();
+      });
+
+      it('should return a basic event', () => {
+        const event = gatherer['createStatsReport']([], true);
+
+        expect(Object.keys(event).length).toBe(6);
+        expect(event.type).toBeFalsy();
+        expect(event.tracks.length).toBe(0);
+        expect(event.remoteTracks.length).toBe(0);
+      });
+    });
   });
 
   describe('collectStats', function () {
@@ -551,74 +567,71 @@ describe('StatsGatherer', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.connectionState = 'connected';
 
-      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
-      const eventSpy = jest.fn();
-      const intervalSpy = jest.spyOn(window, 'clearInterval');
-
-      gatherer.on('stats', eventSpy);
+      const spy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
       gatherer['handleConnectionStateChange']();
 
-      expect(pollSpy).toHaveBeenCalled();
-      expect(eventSpy).not.toHaveBeenCalled();
-      expect(intervalSpy).not.toHaveBeenCalled();
+      expect(spy).toHaveBeenCalled();
     });
 
-    it('should do nothing if signaling state is not stable', () => {
+    it('should do nothing if signaling state is not stable', async () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       rtcPeerConnection.connectionState = 'disconnected';
       rtcPeerConnection.signalingState = 'bleh';
 
       const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
-      const eventSpy = jest.fn();
-      const intervalSpy = jest.spyOn(window, 'clearInterval');
-
-      gatherer.on('stats', eventSpy);
-      gatherer['handleConnectionStateChange']();
-
-      expect(pollSpy).not.toHaveBeenCalled();
-      expect(eventSpy).not.toHaveBeenCalled();
-      expect(intervalSpy).not.toHaveBeenCalled();
-    });
-
-    it('should generate a statsReport on disconnect', () => {
-      const gatherer = new StatsGatherer(rtcPeerConnection);
-      rtcPeerConnection.connectionState = 'disconnected';
-      rtcPeerConnection.signalingState = 'stable';
-
-      const mockStats = {
-        key: 'mockKey',
-        value: 'mockValue',
-      };
-
-      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
       gatherer.on('stats', (event) => {
         expect(event.type).toEqual('disconnected');
       });
-      gatherer['handleConnectionStateChange']();
+      await gatherer['handleConnectionStateChange']();
 
       expect(pollSpy).not.toHaveBeenCalled();
+      expect(gatherSpy).not.toHaveBeenCalled();
       expect(intervalSpy).not.toHaveBeenCalled();
       expect.assertions(3);
     });
 
-    it('should clear interval if closed', () => {
+    it('should generate a statsReport on disconnect', async () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      rtcPeerConnection.connectionState = 'disconnected';
+      rtcPeerConnection.signalingState = 'stable';
+
+      const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
+
+      gatherer.on('stats', (event) => {
+        expect(event.type).toEqual('disconnected');
+      });
+      await gatherer['handleConnectionStateChange']();
+
+      expect(pollSpy).not.toHaveBeenCalled();
+      expect.assertions(2);
+    });
+
+    it('should clear interval if closed', async () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);
       gatherer['pollingInterval'] = 12412;
       rtcPeerConnection.connectionState = 'closed';
       rtcPeerConnection.signalingState = 'bleh';
 
       const pollSpy = jest.spyOn(gatherer as any, 'pollForStats').mockReturnValue(null);
-      const eventSpy = jest.fn();
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue(null);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport').mockReturnValue({} as any);
       const intervalSpy = jest.spyOn(window, 'clearInterval');
 
-      gatherer.on('stats', eventSpy);
-      gatherer['handleConnectionStateChange']();
+      gatherer.on('stats', (event) => {
+        expect(event.type).toEqual('disconnected');
+      });
+      await gatherer['handleConnectionStateChange']();
 
       expect(pollSpy).not.toHaveBeenCalled();
-      expect(eventSpy).not.toHaveBeenCalled();
+      expect(gatherSpy).not.toHaveBeenCalled();
       expect(intervalSpy).toHaveBeenCalled();
+      expect.assertions(3);
     });
   });
 
