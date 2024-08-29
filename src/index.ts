@@ -262,6 +262,11 @@ export default class StatsGatherer extends EventEmitter {
 
     const statsPoll = () => {
       return this.gatherStats().then((reports) => {
+        if (reports.length === 0) {
+          this.logger.warn('Empty stats gathered, ignoring and not emitting stats');
+          return;
+        }
+
         const event = this.createStatsReport(reports, true);
         if (event.tracks.length > 0 || event.remoteTracks.length > 0) {
           // If the last five stat events have a remote bitrate of 0, stop emitting.
@@ -341,6 +346,8 @@ export default class StatsGatherer extends EventEmitter {
           this.pollingInterval = null;
         }
         return [];
+      } else {
+        return [];
       }
     } catch (e) {
       this.logger.error(
@@ -365,6 +372,10 @@ export default class StatsGatherer extends EventEmitter {
       tracks: [],
       remoteTracks: [],
     };
+
+    if (results.length === 0) {
+      return event;
+    }
 
     const sources = results.filter((r) => ['inbound-rtp', 'outbound-rtp'].indexOf(r.value.type) > -1);
 

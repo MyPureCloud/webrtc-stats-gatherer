@@ -265,6 +265,22 @@ describe('StatsGatherer', () => {
       it.skip('should determine bitrate accurately', () => {});
       it.skip('should determine the track kind from the code type if not available otherwise', () => {});
     });
+
+    describe('empty stats', function () {
+      it('should not update lastResult', () => {
+        gatherer['createStatsReport']([], true);
+        expect(gatherer.lastResult).toBeUndefined();
+      });
+
+      it('should return a basic event', () => {
+        const event = gatherer['createStatsReport']([], true);
+
+        expect(Object.keys(event).length).toBe(6);
+        expect(event.type).toBeFalsy();
+        expect(event.tracks.length).toBe(0);
+        expect(event.remoteTracks.length).toBe(0);
+      });
+    });
   });
 
   describe('collectStats', function () {
@@ -409,6 +425,14 @@ describe('StatsGatherer', () => {
       expect.assertions(4);
       jest.resetAllMocks();
     });
+
+    it('should return an empty array for other states (e.g. disconnected)', async () => {
+      rtcPeerConnection.connectionState = 'disconnected';
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+
+      const result = await gatherer['gatherStats']();
+      expect(result).toStrictEqual([]);
+    });
   });
 
   describe('polyFillStats', () => {
@@ -500,6 +524,21 @@ describe('StatsGatherer', () => {
       expect(timeout).not.toHaveBeenCalled();
       expect(interval).not.toHaveBeenCalled();
     });
+
+    it('should ignore empty stats', async () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+
+      const timeout = jest.spyOn(window, 'setTimeout');
+      gatherer['pollForStats']();
+      const statsPollFn = timeout.mock.calls[0][0];
+
+      const gatherSpy = jest.spyOn(gatherer as any, 'gatherStats').mockResolvedValue([]);
+      const reportSpy = jest.spyOn(gatherer as any, 'createStatsReport');
+
+      await statsPollFn();
+
+      expect(reportSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('checkBitrate', () => {
@@ -552,8 +591,7 @@ describe('StatsGatherer', () => {
       expect(pollSpy).not.toHaveBeenCalled();
       expect(gatherSpy).not.toHaveBeenCalled();
       expect(intervalSpy).not.toHaveBeenCalled();
-      expect(pollSpy).not.toHaveBeenCalled();
-      expect.assertions(4);
+      expect.assertions(3);
     });
 
     it('should generate a statsReport on disconnect', async () => {
@@ -593,8 +631,7 @@ describe('StatsGatherer', () => {
       expect(pollSpy).not.toHaveBeenCalled();
       expect(gatherSpy).not.toHaveBeenCalled();
       expect(intervalSpy).toHaveBeenCalled();
-      expect(pollSpy).not.toHaveBeenCalled();
-      expect.assertions(4);
+      expect.assertions(3);
     });
   });
 
