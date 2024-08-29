@@ -1,11 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
-The format is based on [Keepa Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-PCM-2326
-# [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.8...HEAD)
-* [STREAM-32](https://inindca.atlassian.net/browse/STREAM-32) Update dev dependencies, switch to ESLint, add Prettier
+
+# [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.9...HEAD)
+
+# [v9.0.9](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.8...v9.0.9)
+### Fixed
 * [STREAM-69](https://inindca.atlassian.net/browse/STREAM-69) Return an empty array when gathering stats for other states like `disconnected` to prevent errors in callers when network connectivity drops
+
+### Changed
+* [STREAM-32](https://inindca.atlassian.net/browse/STREAM-32) Update dev dependencies, switch to ESLint, add Prettier
 
 # [v9.0.8](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.6...v9.0.8)
 ### Fixed
