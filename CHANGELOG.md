@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.9...HEAD)
+### Fixed
+* [NO-JIRA] Use target of `es5` to avoid breaking consumers
 
 # [v9.0.9](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.8...v9.0.9)
 ### Fixed
