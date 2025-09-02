@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.11...HEAD)
+### Added
+* [STREAM-884](https://inindca.atlassian.net/browse/STREAM-884) - Generate a test report in JUnit.xml format.
 
 # [v9.0.11](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.10...v9.0.11)
 ### Changed
