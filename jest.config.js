@@ -37,4 +37,11 @@ module.exports = {
     }
   },
   preset: 'ts-jest',
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'test-results/unit',
+      outputName: 'test-results.xml'
+    }]
+  ]
 }

@@ -18,3 +18,5 @@ bower.json.ember-try
 npm-debug.log
 testem.log
 .idea
+
+/test-results
