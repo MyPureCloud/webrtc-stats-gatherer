@@ -104,11 +104,15 @@ export interface GetStatsEvent extends StatsEvent {
 export interface TrackStats {
   track: string;
   kind: 'audio' | 'video';
+  timestamp: DOMHighResTimeStamp;
   bytes: number;
   codec?: string;
   bitrate?: number;
   jitter?: number;
   roundTripTime: number;
+
+  totalRoundTripTime?: number;
+  roundTripTimeMeasurements?: number;
 
   packetsSent?: number;
   packetsLost: number;
