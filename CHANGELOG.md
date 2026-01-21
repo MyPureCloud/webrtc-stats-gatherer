@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.11...HEAD)
 ### Added
 * [STREAM-884](https://inindca.atlassian.net/browse/STREAM-884) - Generate a test report in JUnit.xml format.
-* [STREAM-1127](htps://inindca.atlassian.net/browse/STREAM-1127) - Add stats that are useful for calculating MOS and knowing exactly when the stats were gathered/calculated.
+* [STREAM-1127](https://inindca.atlassian.net/browse/STREAM-1127) - Add stats that are useful for calculating MOS and knowing exactly when the stats were gathered/calculated.
 
 # [v9.0.11](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.10...v9.0.11)
 ### Changed
