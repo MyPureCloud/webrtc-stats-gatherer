@@ -466,8 +466,11 @@ export default class StatsGatherer extends EventEmitter {
     const trackInfo: TrackStats = {
       track: track && track.trackIdentifier,
       kind,
+      timestamp: getDefinedValue('timestamp', source, correspondingRemoteSource),
       jitter: getDefinedValue('jitter', source, correspondingRemoteSource),
       roundTripTime: getDefinedValue('roundTripTime', source, correspondingRemoteSource),
+      totalRoundTripTime: getDefinedValue('totalRoundTripTime', source, correspondingRemoteSource),
+      roundTripTimeMeasurements: getDefinedValue('roundTripTimeMeasurements', source, correspondingRemoteSource),
       packetsLost: getDefinedValue('packetsLost', source, correspondingRemoteSource) || 0,
       packetLoss: 0,
       bytes: parseInt(isOutbound ? source.bytesSent : source.bytesReceived, 10) || 0,
