@@ -752,6 +752,50 @@ describe('StatsGatherer', () => {
     });
   });
 
+  describe('stop', () => {
+    it('should clear the polling interval', () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      gatherer['pollingInterval'] = 99887;
+
+      const clearSpy = jest.spyOn(window, 'clearInterval');
+
+      gatherer.stop();
+
+      expect(clearSpy).toHaveBeenCalledWith(99887);
+      expect(gatherer['pollingInterval']).toBeNull();
+
+      clearSpy.mockRestore();
+    });
+
+    it('should be a no-op if no polling interval is active', () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      gatherer['pollingInterval'] = null;
+
+      const clearSpy = jest.spyOn(window, 'clearInterval');
+
+      gatherer.stop();
+
+      expect(clearSpy).not.toHaveBeenCalled();
+      expect(gatherer['pollingInterval']).toBeNull();
+
+      clearSpy.mockRestore();
+    });
+
+    it('should be safe to call multiple times', () => {
+      const gatherer = new StatsGatherer(rtcPeerConnection);
+      gatherer['pollingInterval'] = 55555;
+
+      const clearSpy = jest.spyOn(window, 'clearInterval');
+
+      gatherer.stop();
+      gatherer.stop();
+
+      expect(clearSpy).toHaveBeenCalledTimes(1);
+
+      clearSpy.mockRestore();
+    });
+  });
+
   describe('handleIceStateChange', () => {
     it('should do nothing if connected and already have connection metrics', () => {
       const gatherer = new StatsGatherer(rtcPeerConnection);

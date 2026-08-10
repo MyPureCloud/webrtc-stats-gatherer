@@ -68,6 +68,19 @@ export default class StatsGatherer extends EventEmitter {
     }
   }
 
+  /**
+   * Stops the stats polling interval and removes event listeners from the peer connection.
+   * Call this when you are done with the gatherer to prevent leaked timers.
+   */
+  stop() {
+    if (this.pollingInterval) {
+      if (IS_BROWSER) {
+        window.clearInterval(this.pollingInterval);
+      }
+      this.pollingInterval = null;
+    }
+  }
+
   private handleIceStateChange() {
     const state = this.peerConnection.iceConnectionState;
 
