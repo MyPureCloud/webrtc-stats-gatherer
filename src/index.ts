@@ -38,6 +38,9 @@ export default class StatsGatherer extends EventEmitter {
 
   private statsArr: Array<object> = [];
 
+  private boundHandleIceStateChange: () => void;
+  private boundHandleConnectionStateChange: () => void;
+
   constructor(
     public peerConnection: RTCPeerConnection,
     opts: StatsGathererOpts = {},
@@ -53,16 +56,19 @@ export default class StatsGatherer extends EventEmitter {
 
     this.logger = opts.logger || console;
 
+    this.boundHandleIceStateChange = this.handleIceStateChange.bind(this);
+    this.boundHandleConnectionStateChange = this.handleConnectionStateChange.bind(this);
+
     if (['new', 'checking'].includes(peerConnection.iceConnectionState)) {
       if (peerConnection.iceConnectionState === 'checking') {
         this.logger.warn(`iceConnectionState is already in checking state so ice connect time may not be accurate`);
         this.handleIceStateChange();
       }
 
-      peerConnection.addEventListener('iceconnectionstatechange', this.handleIceStateChange.bind(this));
+      peerConnection.addEventListener('iceconnectionstatechange', this.boundHandleIceStateChange);
     }
 
-    peerConnection.addEventListener('connectionstatechange', this.handleConnectionStateChange.bind(this));
+    peerConnection.addEventListener('connectionstatechange', this.boundHandleConnectionStateChange);
     if (peerConnection.connectionState === 'connected') {
       this.pollForStats();
     }
@@ -73,6 +79,9 @@ export default class StatsGatherer extends EventEmitter {
    * Call this when you are done with the gatherer to prevent leaked timers.
    */
   stop() {
+    this.peerConnection.removeEventListener('iceconnectionstatechange', this.boundHandleIceStateChange);
+    this.peerConnection.removeEventListener('connectionstatechange', this.boundHandleConnectionStateChange);
+
     if (this.pollingInterval) {
       if (IS_BROWSER) {
         window.clearInterval(this.pollingInterval);

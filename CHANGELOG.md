@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.1.0...HEAD)
 ### Fixed
 * [STREAM-1694](https://inindca.atlassian.net/browse/STREAM-1694) Add public stop() method to clear polling interval
+* [STREAM-2148](https://inindca.atlassian.net/browse/STREAM-2148) Remove event listeners when stopping gathering
 
 # [v9.1.0](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.0.11...v9.1.0)
 ### Added
