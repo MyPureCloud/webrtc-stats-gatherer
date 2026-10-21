@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.2.0...HEAD)
+### Changed
+* [STREAM-2690](https://inindca.atlassian.net/browse/STREAM-2690) - Update CODEOWNERS to reflect the current team.
 
 # [v9.2.0](https://github.com/mypurecloud/webrtc-stats-gatherer/compare/v9.1.0...v9.2.0)
 ### Fixed
